@@ -1,0 +1,118 @@
+package com.example.irrigacion.model;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Index;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.UUID;
+
+@Entity
+@Table(name = "agenda", indexes = {
+        @Index(name = "idx_agenda_node_zona", columnList = "node_id,zona")
+})
+public class Agenda {
+    @Id
+    private UUID id;
+
+    @Column(name = "node_id", nullable = false)
+    private UUID nodeId;
+
+    @Column(nullable = false)
+    private short zona;
+
+    @Column(name = "dias_semana", nullable = false)
+    @Convert(converter = DaysSemanaConverter.class)
+    private List<String> diasSemana;
+
+    @Column(name = "hora_inicio", nullable = false)
+    private LocalTime horaInicio;
+
+    @Column(name = "duracion_min", nullable = false)
+    private short duracionMin;
+
+    @Column(nullable = false)
+    private boolean activa = true;
+
+    @Column(nullable = false)
+    private int version;
+
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
+
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public UUID getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(UUID nodeId) {
+        this.nodeId = nodeId;
+    }
+
+    public short getZona() {
+        return zona;
+    }
+
+    public void setZona(short zona) {
+        this.zona = zona;
+    }
+
+    public List<String> getDiasSemana() {
+        return diasSemana;
+    }
+
+    public void setDiasSemana(List<String> diasSemana) {
+        this.diasSemana = diasSemana;
+    }
+
+    public LocalTime getHoraInicio() {
+        return horaInicio;
+    }
+
+    public void setHoraInicio(LocalTime horaInicio) {
+        this.horaInicio = horaInicio;
+    }
+
+    public short getDuracionMin() {
+        return duracionMin;
+    }
+
+    public void setDuracionMin(short duracionMin) {
+        this.duracionMin = duracionMin;
+    }
+
+    public boolean isActiva() {
+        return activa;
+    }
+
+    public void setActiva(boolean activa) {
+        this.activa = activa;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
+    public OffsetDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(OffsetDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+}

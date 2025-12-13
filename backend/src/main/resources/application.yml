@@ -1,0 +1,32 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/irrigacion
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-init-sql: "SET TIME ZONE 'UTC'"
+      data-source-properties:
+        options: -c TimeZone=UTC
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate.jdbc.time_zone: UTC
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+app:
+  mqtt:
+    enabled: true
+    host: localhost
+    port: 1883
+    username: ""
+    password: ""
+    tls: false
+    clientId: ""

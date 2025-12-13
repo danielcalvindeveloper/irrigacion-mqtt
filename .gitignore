@@ -1,0 +1,20 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# Java
+backend/target/
+*.log
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# ESP32
+esp32/.pio/
+esp32/.vscode/
