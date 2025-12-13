@@ -33,11 +33,11 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            -t dacalvin/irrigacion-backend:latest \
-            -t dacalvin/irrigacion-backend:${{ github.sha }} \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/irrigacion-backend:latest \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/irrigacion-backend:${{ github.sha }} \
             backend
 
       - name: Push Docker image
         run: |
-          docker push dacalvin/irrigacion-backend:latest
-          docker push dacalvin/irrigacion-backend:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/irrigacion-backend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/irrigacion-backend:${{ github.sha }}

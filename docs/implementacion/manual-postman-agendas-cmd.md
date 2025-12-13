@@ -6,7 +6,22 @@
 - Postman (o equivalente)
 - Puerto 8080 libre
 
-## 2) Levantar infraestructura mínima
+## 2) Configuración inicial
+
+⚠️ **Opción A: Usar Docker Compose (Recomendado)**
+
+Si tienes el archivo `.env` configurado:
+
+```powershell
+# Desde la raíz del proyecto
+cp .env.example .env
+docker-compose up -d postgres mqtt
+```
+
+Esto levanta PostgreSQL y MQTT con las credenciales del archivo `.env`.
+
+⚠️ **Opción B: Contenedores manuales (solo para testing)**
+
 1. **PostgreSQL 15**
    ```powershell
    docker run -d --name irrigacion-db ^
@@ -14,24 +29,41 @@
      -e POSTGRES_PASSWORD=postgres ^
      -p 5432:5432 postgres:15
    ```
-2. **(Opcional) Broker MQTT HiveMQ CE** para probar /cmd end-to-end.
+   
+   ⚠️ **DESARROLLO:** Contraseña débil - cambiar en producción
+
+2. **(Opcional) Broker MQTT HiveMQ CE**
    ```powershell
    docker run -d --name irrigacion-mqtt -p 1883:1883 hivemq/hivemq-ce:2023.5
    ```
 
 ## 3) Configurar variables de entorno para el backend
+
+⚠️ **Opción A: Cargar desde .env (Recomendado)**
+
+```powershell
+# PowerShell - Cargar variables desde .env
+Get-Content .env | ForEach-Object {
+    if ($_ -match '^([^#][^=]+)=(.*)$') {
+        [System.Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process')
+    }
+}
+```
+
+⚠️ **Opción B: Configurar manualmente**
+
 En una consola nueva (PowerShell en Windows):
 ```powershell
 # Base de datos
 $env:SPRING_DATASOURCE_URL = "jdbc:postgresql://localhost:5432/irrigacion"
 $env:SPRING_DATASOURCE_USERNAME = "postgres"
-$env:SPRING_DATASOURCE_PASSWORD = "postgres"
+$env:SPRING_DATASOURCE_PASSWORD = "postgres"  # ⚠️ SOLO DESARROLLO
 
 # MQTT (si levantaste el broker)
 $env:APP_MQTT_ENABLED = "true"        # ponlo en false si no hay broker
 $env:APP_MQTT_HOST = "localhost"
 $env:APP_MQTT_PORT = "1883"
-$env:APP_MQTT_TLS = "false"
+$env:APP_MQTT_TLS = "false"           # ⚠️ En producción: true
 ```
 
 ## 4) Ejecutar la API

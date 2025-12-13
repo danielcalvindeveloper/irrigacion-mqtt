@@ -1,8 +1,37 @@
 # Guía Docker Compose - Stack completo
 
-## Primera ejecución (build completo)
+## Configuración inicial
+
+⚠️ **IMPORTANTE:** Antes de ejecutar Docker Compose, debes configurar las variables de entorno.
+
+### 1. Copiar archivo de configuración
 
 Desde la raíz del proyecto (`irrigacion-mqtt-repo/`):
+
+```powershell
+cp .env.example .env
+```
+
+### 2. Editar credenciales (opcional para desarrollo)
+
+El archivo `.env` contiene las credenciales que usará Docker Compose.
+
+**Para desarrollo local:** Puedes usar los valores por defecto
+
+**Para producción:** DEBES cambiar:
+- `POSTGRES_PASSWORD` - Contraseña segura (mínimo 16 caracteres)
+- `APP_MQTT_USERNAME` y `APP_MQTT_PASSWORD` - Credenciales MQTT
+- `APP_MQTT_TLS=true` - Habilitar TLS
+
+### 3. Verificar configuración
+
+Puedes ver las variables que Docker Compose usará:
+
+```powershell
+docker-compose config
+```
+
+## Primera ejecución (build completo)
 
 ```powershell
 docker-compose build --no-cache backend
@@ -10,11 +39,13 @@ docker-compose up -d
 ```
 
 Esto levanta:
-- **Postgres** en `localhost:5432` (usuario: `postgres`, clave: `postgres`, db: `irrigacion`)
-- **HiveMQ MQTT** en `localhost:1883` (sin auth), Web UI en `http://localhost:8000`
+- **Postgres** en `localhost:5432` (credenciales desde `.env`)
+- **HiveMQ MQTT** en `localhost:1883` (sin auth en desarrollo), Web UI en `http://localhost:8000`
 - **Backend Spring Boot** en `http://localhost:8080`
 
 El backend espera a que Postgres esté healthy y MQTT esté arrancado, luego ejecuta Flyway y se conecta al broker.
+
+💡 **Nota de seguridad:** El archivo `.env` con credenciales reales NO se sube a Git (está en `.gitignore`)
 
 ## Ejecuciones posteriores
 

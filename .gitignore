@@ -18,3 +18,24 @@ frontend/dist/
 # ESP32
 esp32/.pio/
 esp32/.vscode/
+
+# Archivos de configuración sensibles
+*.key
+*.pem
+*.crt
+*credentials*
+*secret*
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Cloudflare
+config.yml
+tunnel.json
+
+# Archivos temporales y backups
+*.bak
+*.swp
+*.tmp
+*~
