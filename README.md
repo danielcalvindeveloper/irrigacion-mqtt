@@ -4,9 +4,9 @@ Repo base para sistema de riego por zonas con ESP32 + MQTT (HiveMQ) + Backend Ja
 
 ## Estructura
 - `docs/` documentación funcional/técnica (MVP)
-- `backend/` Spring Boot (esqueleto)
-- `frontend/` Vue 3 (esqueleto)
-- `esp32/` notas y placeholders de firmware
+- `backend/` Spring Boot 3.4.0 con frontend embebido
+- `frontend/` Vue 3 SPA (embebido en producción, dev server en desarrollo)
+- `esp32/` mock Python para simulación de nodo
 
 ## ⚠️ Seguridad
 
@@ -38,19 +38,73 @@ Repo base para sistema de riego por zonas con ESP32 + MQTT (HiveMQ) + Backend Ja
 
 Para más detalles, consulta [docs/auditoria-seguridad.md](docs/auditoria-seguridad.md)
 
-## Primeros pasos (recomendado)
-1. Copiar y configurar el archivo `.env` (ver arriba)
-2. Configurar HiveMQ Cloud (cluster + credenciales)
-3. Probar publish/subscribe con el **Web Client** de HiveMQ
-4. Implementar conexión MQTT en ESP32 y probar comandos manuales
-5. Recién después: backend + UI
+## 🚀 Inicio Rápido
+
+### Desarrollo (recomendado)
+```bash
+# 1. Copiar y configurar variables de entorno
+cp .env.example .env
+
+# 2. Levantar servicios (PostgreSQL + MQTT + Backend)
+docker-compose up -d
+
+# 3. Iniciar frontend con hot reload
+cd frontend
+npm install
+npm run dev:mobile
+
+# Acceder: http://localhost:5173
+```
+
+### Producción (frontend embebido)
+```bash
+# 1. Configurar .env
+cp .env.example .env
+
+# 2. Build y levantar todo (incluye frontend embebido)
+docker-compose up -d --build backend
+
+# Acceder: http://localhost:8080
+```
+
+## Autenticación
+
+El backend utiliza **HTTP Basic Authentication**:
+- Usuario y contraseña configurados en `.env`
+- Variables: `APP_SECURITY_USERNAME` y `APP_SECURITY_PASSWORD`
+- Desarrollo: `admin:dev123` (por defecto)
+- ⚠️ **Producción**: DEBE cambiar las credenciales
+
+Todos los endpoints requieren autenticación: `/api/**`, `/actuator/**`, y archivos estáticos.
 
 ## Requisitos
-- Docker Desktop (para desarrollo local)
-- Java 17+ (para backend)
-- Node 18+ (para frontend)
-- VSCode + GitHub Copilot (Agent) + GPT-5.1 Codex
+- **Docker Desktop** - Para servicios (PostgreSQL, MQTT, backend)
+- **Node.js 18+** - Solo para desarrollo de frontend con hot reload
+- **Java 17+** - Solo si compilas backend fuera de Docker
+- **Python 3** - Solo para mock ESP32
 
-## Notas
-- MQTT debe ir **sobre TLS** en producción.
-- La UI **no** debe conectarse directo al broker. Va contra el backend (REST/WebSocket).
+## Arquitectura
+
+### Desarrollo
+```
+Frontend (Vite:5173) ←CORS→ Backend (8080) ←MQTT→ ESP32
+                              ↕
+                        PostgreSQL (5432)
+```
+
+### Producción
+```
+Frontend embebido en Backend (8080) ←MQTT→ ESP32
+              ↕
+        PostgreSQL (5432)
+```
+
+## Documentación
+- [PROYECTO_CONTEXTO.md](PROYECTO_CONTEXTO.md) - Estado completo del proyecto
+- [docs/implementacion/frontend-embebido.md](docs/implementacion/frontend-embebido.md) - Arquitectura embebida
+- [docs/implementacion/](docs/implementacion/) - Guías de implementación
+
+## Notas de Seguridad
+- MQTT debe ir **sobre TLS** en producción
+- Frontend embebido elimina necesidad de CORS en producción
+- Ver [docs/auditoria-seguridad.md](docs/auditoria-seguridad.md) para más detalles

@@ -22,5 +22,18 @@ export default defineConfig({
         changeOrigin: true
       }
     }
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    // Optimizaciones para producción embebida
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['vue', 'vue-router', 'pinia'],
+          'vuetify': ['vuetify']
+        }
+      }
+    }
   }
 })

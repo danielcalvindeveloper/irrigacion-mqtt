@@ -21,12 +21,15 @@ export const useZonesStore = defineStore('zones', () => {
 
   // Actions
   async function fetchZonesStatus() {
-    loading.value = true
+    // Solo mostrar loading en la primera carga
+    if (zones.value.length === 0) {
+      loading.value = true
+    }
     error.value = null
     
     try {
       const response = await api.getZonesStatus(nodeId.value)
-      zones.value = response.data.map(z => ({
+      const newZones = response.data.map(z => ({
         id: z.zona,
         name: z.nombre,
         active: z.activa,
@@ -35,13 +38,40 @@ export const useZonesStore = defineStore('zones', () => {
           Math.max(0, Math.min(100, ((z.tiempoRestanteSeg / 3600) * 100))) : 0,
         nextSchedule: z.proximoRiego
       }))
+      
+      // Actualizar zonas existentes en lugar de reemplazar el array completo
+      // Esto evita el re-renderizado innecesario
+      if (zones.value.length === 0) {
+        // Primera carga: asignar directamente
+        zones.value = newZones
+      } else {
+        // Actualización: modificar solo los datos que cambiaron
+        newZones.forEach(newZone => {
+          const existingZone = zones.value.find(z => z.id === newZone.id)
+          if (existingZone) {
+            // Actualizar propiedades sin cambiar la referencia del objeto
+            Object.assign(existingZone, newZone)
+          } else {
+            // Nueva zona: agregarla
+            zones.value.push(newZone)
+          }
+        })
+        
+        // Remover zonas que ya no existen
+        zones.value = zones.value.filter(z => 
+          newZones.some(nz => nz.id === z.id)
+        )
+      }
+      
       connected.value = true
     } catch (err) {
       error.value = err.message
       connected.value = false
       console.error('Error al cargar zonas:', err)
-      // Fallback a datos mockeados en caso de error
-      zones.value = getMockedZones()
+      // Fallback a datos mockeados en caso de error solo si no hay zonas
+      if (zones.value.length === 0) {
+        zones.value = getMockedZones()
+      }
     } finally {
       loading.value = false
     }

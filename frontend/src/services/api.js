@@ -5,7 +5,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  timeout: 10000
+  timeout: 10000,
+  withCredentials: true  // Enviar credenciales (Basic Auth) en peticiones AJAX
 })
 
 // Interceptor para logging (desarrollo)
@@ -150,6 +151,81 @@ export const getEventos = (nodeId, filtros = {}) => {
  */
 export const getHumedad = (nodeId, filtros = {}) => {
   return api.get(`/nodos/${nodeId}/humedad`, { params: filtros })
+}
+
+// ========== CONFIGURACIÓN DE ZONAS ==========
+
+/**
+ * Obtener configuración de todas las zonas de un nodo
+ * @param {string} nodeId - ID del nodo ESP32
+ * @param {boolean} soloHabilitadas - Filtrar solo zonas habilitadas
+ * @returns {Promise} Lista de configuraciones de zonas
+ */
+export const getZoneConfigs = (nodeId, soloHabilitadas = false) => {
+  return api.get(`/nodos/${nodeId}/zonas`, { 
+    params: { soloHabilitadas } 
+  })
+}
+
+/**
+ * Obtener configuración de una zona específica
+ * @param {string} nodeId - ID del nodo ESP32
+ * @param {number} zona - ID de la zona (1-8)
+ * @returns {Promise} Configuración de la zona
+ */
+export const getZoneConfig = (nodeId, zona) => {
+  return api.get(`/nodos/${nodeId}/zonas/${zona}`)
+}
+
+/**
+ * Crear o actualizar configuración de zona (upsert)
+ * @param {string} nodeId - ID del nodo ESP32
+ * @param {object} configData - Datos de configuración
+ * @returns {Promise}
+ */
+export const upsertZoneConfig = (nodeId, configData) => {
+  return api.post(`/nodos/${nodeId}/zonas`, configData)
+}
+
+/**
+ * Actualizar solo el nombre de una zona
+ * @param {string} nodeId - ID del nodo ESP32
+ * @param {number} zona - ID de la zona
+ * @param {string} nombre - Nuevo nombre
+ * @returns {Promise}
+ */
+export const updateZoneNombre = (nodeId, zona, nombre) => {
+  return api.patch(`/nodos/${nodeId}/zonas/${zona}/nombre`, { nombre })
+}
+
+/**
+ * Habilitar/deshabilitar una zona (toggle)
+ * @param {string} nodeId - ID del nodo ESP32
+ * @param {number} zona - ID de la zona
+ * @returns {Promise}
+ */
+export const toggleZoneHabilitada = (nodeId, zona) => {
+  return api.patch(`/nodos/${nodeId}/zonas/${zona}/toggle`)
+}
+
+/**
+ * Eliminar configuración de zona (soft delete)
+ * @param {string} nodeId - ID del nodo ESP32
+ * @param {number} zona - ID de la zona
+ * @returns {Promise}
+ */
+export const deleteZoneConfig = (nodeId, zona) => {
+  return api.delete(`/nodos/${nodeId}/zonas/${zona}`)
+}
+
+/**
+ * Reordenar zonas
+ * @param {string} nodeId - ID del nodo ESP32
+ * @param {number[]} zonasOrdenadas - Array de IDs de zonas en nuevo orden
+ * @returns {Promise} Lista actualizada de configuraciones
+ */
+export const reorderZones = (nodeId, zonasOrdenadas) => {
+  return api.put(`/nodos/${nodeId}/zonas/orden`, { zonas: zonasOrdenadas })
 }
 
 // ========== HEALTH CHECK ==========

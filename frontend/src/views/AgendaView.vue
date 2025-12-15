@@ -206,8 +206,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAgendasStore } from '@/stores/agendas'
+import { useZoneConfigStore } from '@/stores/zoneConfig'
 
 const agendasStore = useAgendasStore()
+const zoneConfigStore = useZoneConfigStore()
 
 // State
 const showDialog = ref(false)
@@ -221,13 +223,8 @@ const formData = ref({
   activa: true
 })
 
-// Opciones de zonas
-const zonasOptions = [
-  { title: 'Zona 1', value: 1 },
-  { title: 'Zona 2', value: 2 },
-  { title: 'Zona 3', value: 3 },
-  { title: 'Zona 4', value: 4 }
-]
+// Opciones de zonas (dinámicas desde configuración)
+const zonasOptions = computed(() => zoneConfigStore.zonasDisponibles)
 
 // Mapeo de días
 const diasMap = {
@@ -264,7 +261,7 @@ const agendas = computed(() => agendasStore.agendas.map(a => {
     hora, // Backend devuelve horaInicio
     duracionMinutos: a.duracionMin || a.duracionMinutos, // Backend devuelve duracionMin
     nombre: a.nombre || `Zona ${a.zona} - ${hora}`, // Generar nombre si no existe
-    zonaName: `Zona ${a.zona}`,
+    zonaName: zoneConfigStore.getZoneName(a.zona), // Usar nombre de configuración
     diasFormatted: formatDias(a.diasSemana || [])
   }
 }))
@@ -363,7 +360,8 @@ const toggleAgendaStatus = async (agenda) => {
 }
 
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
+  await zoneConfigStore.fetchConfigs(true) // Cargar solo zonas habilitadas
   agendasStore.fetchAgendas()
 })
 </script>

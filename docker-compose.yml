@@ -30,8 +30,8 @@ services:
 
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: irrigacion-backend
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
@@ -41,6 +41,8 @@ services:
       APP_MQTT_HOST: ${APP_MQTT_HOST}
       APP_MQTT_PORT: ${APP_MQTT_PORT}
       APP_MQTT_TLS: ${APP_MQTT_TLS}
+      APP_SECURITY_USERNAME: ${APP_SECURITY_USERNAME}
+      APP_SECURITY_PASSWORD: ${APP_SECURITY_PASSWORD}
     ports:
       - "8080:8080"
     depends_on:

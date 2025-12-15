@@ -66,12 +66,18 @@
 - Métricas recomendadas: latencia publish/ack MQTT, reconexiones, eventos procesados/s, errores de validación de agenda.
 
 ## Seguridad
-- JWT simple para APIs y WS.
-- CORS restringido al dominio de la UI.
-- MQTT TLS con credenciales por dispositivo (MVP: user/pass).
-- Limitar `POST /cmd` por rol y rate-limit para evitar pulsos masivos.
 
-## Seguridad
-- JWT simple para APIs y WS.
-- CORS restringido al dominio de la UI.
-- MQTT TLS con credenciales por dispositivo (MVP: user/pass).
+### Implementación Actual (MVP)
+- **HTTP Basic Authentication**: Usuario/password desde variables de entorno
+  - Variables: `APP_SECURITY_USERNAME`, `APP_SECURITY_PASSWORD`
+  - Configuración en `SecurityConfig.java` (package: `ar.net.dac.iot.irrigacion.config`)
+  - In-memory authentication (sin base de datos)
+- **CORS**: Habilitado para desarrollo (frontend:5173)
+- **MQTT**: Sin autenticación en desarrollo (TLS planeado para producción)
+- **Credenciales**: Gestionadas en archivo `.env` (excluido de Git)
+
+### Futuro
+- Migrar a JWT para multi-usuario
+- MQTT con TLS y credenciales por dispositivo
+- Rate limiting en `POST /cmd`
+- WebSocket authentication
