@@ -17,8 +17,6 @@
 
     <!-- Loading solo en primera carga -->
     <v-progress-linear v-if="loading && zones.length === 0" indeterminate color="primary" class="mb-4"></v-progress-linear>
-    <!-- Loading -->
-    <v-progress-linear v-if="loading" indeterminate color="primary" class="mb-4"></v-progress-linear>
     
     <v-row>
       <v-col
@@ -213,8 +211,6 @@ onMounted(() => {
   cursor: pointer;
   /* Evitar el re-layout al actualizar contenido */
   contain: layout style;
-  transition: all var(--transition-normal);
-  cursor: pointer;
 }
 
 .zone-card:hover {

@@ -7,7 +7,6 @@ const api = axios.create({
   },
   timeout: 10000,
   withCredentials: true  // Enviar credenciales (Basic Auth) en peticiones AJAX
-  timeout: 10000
 })
 
 // Interceptor para logging (desarrollo)

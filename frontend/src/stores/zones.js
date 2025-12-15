@@ -25,13 +25,11 @@ export const useZonesStore = defineStore('zones', () => {
     if (zones.value.length === 0) {
       loading.value = true
     }
-    loading.value = true
     error.value = null
     
     try {
       const response = await api.getZonesStatus(nodeId.value)
       const newZones = response.data.map(z => ({
-      zones.value = response.data.map(z => ({
         id: z.zona,
         name: z.nombre,
         active: z.activa,
@@ -74,8 +72,6 @@ export const useZonesStore = defineStore('zones', () => {
       if (zones.value.length === 0) {
         zones.value = getMockedZones()
       }
-      // Fallback a datos mockeados en caso de error
-      zones.value = getMockedZones()
     } finally {
       loading.value = false
     }

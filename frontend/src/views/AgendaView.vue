@@ -211,8 +211,6 @@ import { useZoneConfigStore } from '@/stores/zoneConfig'
 const agendasStore = useAgendasStore()
 const zoneConfigStore = useZoneConfigStore()
 
-const agendasStore = useAgendasStore()
-
 // State
 const showDialog = ref(false)
 const editingAgenda = ref(null)
@@ -227,13 +225,6 @@ const formData = ref({
 
 // Opciones de zonas (dinámicas desde configuración)
 const zonasOptions = computed(() => zoneConfigStore.zonasDisponibles)
-// Opciones de zonas
-const zonasOptions = [
-  { title: 'Zona 1', value: 1 },
-  { title: 'Zona 2', value: 2 },
-  { title: 'Zona 3', value: 3 },
-  { title: 'Zona 4', value: 4 }
-]
 
 // Mapeo de días
 const diasMap = {
@@ -271,7 +262,6 @@ const agendas = computed(() => agendasStore.agendas.map(a => {
     duracionMinutos: a.duracionMin || a.duracionMinutos, // Backend devuelve duracionMin
     nombre: a.nombre || `Zona ${a.zona} - ${hora}`, // Generar nombre si no existe
     zonaName: zoneConfigStore.getZoneName(a.zona), // Usar nombre de configuración
-    zonaName: `Zona ${a.zona}`,
     diasFormatted: formatDias(a.diasSemana || [])
   }
 }))
@@ -372,7 +362,6 @@ const toggleAgendaStatus = async (agenda) => {
 // Lifecycle
 onMounted(async () => {
   await zoneConfigStore.fetchConfigs(true) // Cargar solo zonas habilitadas
-onMounted(() => {
   agendasStore.fetchAgendas()
 })
 </script>

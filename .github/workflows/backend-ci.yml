@@ -33,9 +33,10 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
+            -f backend/Dockerfile \
             -t ${{ secrets.DOCKERHUB_USERNAME }}/irrigacion-backend:latest \
             -t ${{ secrets.DOCKERHUB_USERNAME }}/irrigacion-backend:${{ github.sha }} \
-            backend
+            .
 
       - name: Push Docker image
         run: |
