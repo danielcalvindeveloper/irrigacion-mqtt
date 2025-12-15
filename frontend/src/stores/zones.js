@@ -21,23 +21,17 @@ export const useZonesStore = defineStore('zones', () => {
 
   // Actions
   async function fetchZonesStatus() {
-<<<<<<< HEAD
     // Solo mostrar loading en la primera carga
     if (zones.value.length === 0) {
       loading.value = true
     }
-=======
     loading.value = true
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
     error.value = null
     
     try {
       const response = await api.getZonesStatus(nodeId.value)
-<<<<<<< HEAD
       const newZones = response.data.map(z => ({
-=======
       zones.value = response.data.map(z => ({
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
         id: z.zona,
         name: z.nombre,
         active: z.activa,
@@ -46,7 +40,6 @@ export const useZonesStore = defineStore('zones', () => {
           Math.max(0, Math.min(100, ((z.tiempoRestanteSeg / 3600) * 100))) : 0,
         nextSchedule: z.proximoRiego
       }))
-<<<<<<< HEAD
       
       // Actualizar zonas existentes en lugar de reemplazar el array completo
       // Esto evita el re-renderizado innecesario
@@ -72,22 +65,17 @@ export const useZonesStore = defineStore('zones', () => {
         )
       }
       
-=======
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
       connected.value = true
     } catch (err) {
       error.value = err.message
       connected.value = false
       console.error('Error al cargar zonas:', err)
-<<<<<<< HEAD
       // Fallback a datos mockeados en caso de error solo si no hay zonas
       if (zones.value.length === 0) {
         zones.value = getMockedZones()
       }
-=======
       // Fallback a datos mockeados en caso de error
       zones.value = getMockedZones()
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
     } finally {
       loading.value = false
     }

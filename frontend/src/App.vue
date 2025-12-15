@@ -21,14 +21,11 @@
         <span>Agenda</span>
       </v-btn>
 
-<<<<<<< HEAD
       <v-btn value="zonas" to="/zonas">
         <v-icon>mdi-tune-variant</v-icon>
         <span>Zonas</span>
       </v-btn>
 
-=======
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
       <v-btn value="historico" to="/historico">
         <v-icon>mdi-chart-line</v-icon>
         <span>Histórico</span>
