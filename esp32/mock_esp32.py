@@ -123,23 +123,44 @@ class MockESP32:
         print(f"{'='*60}")
         
         accion = payload.get("accion", "").upper()
-        duracion = payload.get("duracionMinutos", 0)
+        duracion_seg = payload.get("duracion", 0)  # Duración en segundos según contrato
+        duracion_min = duracion_seg // 60 if duracion_seg else 0
         
         print(f"Zona: {zona}")
         print(f"Acción: {accion}")
         
-        if accion == "REGAR":
-            print(f"Duración: {duracion} minutos")
+        if accion == "ON":
+            print(f"Duración: {duracion_min} minutos ({duracion_seg} segundos)")
             print(f"\n🚿 Simulando riego en zona {zona}...")
             print(f"   └─ Electroválvula de zona {zona} ABIERTA")
-            print(f"   └─ Esperando {duracion} minutos...")
+            print(f"   └─ Esperando {duracion_min} minutos...")
             print(f"   └─ (En un ESP32 real, aquí activarías el relé/GPIO)")
-            # En un ESP32 real: activar GPIO, timer, etc.
-        elif accion == "DETENER":
+            
+            # Publicar estado (formato esperado por backend)
+            status_topic = f"riego/{self.node_id}/status/zona/{zona}"
+            status_payload = {
+                "activa": True,
+                "tiempoRestante": duracion_seg
+            }
+            if self.client:
+                self.client.publish(status_topic, json.dumps(status_payload))
+                print(f"   └─ Estado publicado en: {status_topic}")
+                
+        elif accion == "OFF":
             print(f"\n⏹️  Deteniendo riego en zona {zona}")
             print(f"   └─ Electroválvula de zona {zona} CERRADA")
+            
+            # Publicar estado (formato esperado por backend)
+            status_topic = f"riego/{self.node_id}/status/zona/{zona}"
+            status_payload = {
+                "activa": False,
+                "tiempoRestante": 0
+            }
+            if self.client:
+                self.client.publish(status_topic, json.dumps(status_payload))
+                print(f"   └─ Estado publicado en: {status_topic}")
         else:
-            print(f"⚠️  Acción desconocida: {accion}")
+            print(f"⚠️  Acción desconocida: {accion} (esperaba ON o OFF)")
             
         print(f"{'='*60}\n")
         

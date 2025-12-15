@@ -17,6 +17,8 @@ public class AgendaRequest {
     @NotNull
     private UUID nodeId;
 
+    private String nombre;
+
     @Min(1)
     @Max(4)
     private short zona;
@@ -48,6 +50,14 @@ public class AgendaRequest {
 
     public void setNodeId(UUID nodeId) {
         this.nodeId = nodeId;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
     }
 
     public short getZona() {

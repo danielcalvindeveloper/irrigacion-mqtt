@@ -22,6 +22,9 @@ public class Agenda {
     @Column(name = "node_id", nullable = false)
     private UUID nodeId;
 
+    @Column(length = 100)
+    private String nombre;
+
     @Column(nullable = false)
     private short zona;
 
@@ -58,6 +61,14 @@ public class Agenda {
 
     public void setNodeId(UUID nodeId) {
         this.nodeId = nodeId;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
     }
 
     public short getZona() {

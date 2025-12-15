@@ -25,10 +25,14 @@ public class AgendaController {
 
     private final AgendaService agendaService;
     private final MqttGateway mqttGateway;
+    private final com.example.irrigacion.service.ZoneStatusService zoneStatusService;
 
-    public AgendaController(AgendaService agendaService, Optional<MqttGateway> mqttGateway) {
+    public AgendaController(AgendaService agendaService, 
+                          Optional<MqttGateway> mqttGateway,
+                          com.example.irrigacion.service.ZoneStatusService zoneStatusService) {
         this.agendaService = agendaService;
         this.mqttGateway = mqttGateway.orElse(null);
+        this.zoneStatusService = zoneStatusService;
     }
 
     @GetMapping("/agendas")
@@ -48,6 +52,11 @@ public class AgendaController {
     public ResponseEntity<Void> delete(@PathVariable UUID nodeId, @PathVariable UUID agendaId) {
         agendaService.delete(nodeId, agendaId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/status")
+    public List<com.example.irrigacion.dto.ZoneStatusResponse> status(@PathVariable UUID nodeId) {
+        return zoneStatusService.getStatus(nodeId);
     }
 
     @PostMapping("/cmd")

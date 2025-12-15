@@ -48,6 +48,7 @@ public class AgendaService {
         Agenda agenda = agendaRepository.findById(request.getId()).orElseGet(Agenda::new);
         agenda.setId(request.getId());
         agenda.setNodeId(request.getNodeId());
+        agenda.setNombre(request.getNombre());
         agenda.setZona(request.getZona());
         agenda.setDiasSemana(request.getDiasSemana());
         agenda.setHoraInicio(LocalTime.parse(request.getHoraInicio()));
@@ -135,6 +136,7 @@ public class AgendaService {
         AgendaResponse r = new AgendaResponse();
         r.setId(a.getId());
         r.setNodeId(a.getNodeId());
+        r.setNombre(a.getNombre());
         r.setZona(a.getZona());
         r.setDiasSemana(a.getDiasSemana());
         r.setHoraInicio(a.getHoraInicio().toString());
