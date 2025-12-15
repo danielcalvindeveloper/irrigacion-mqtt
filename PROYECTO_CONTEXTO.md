@@ -2,11 +2,7 @@
 
 > **Propósito**: Este documento centraliza el estado completo del proyecto (arquitectura, implementación, decisiones) para mantener contexto consistente durante el desarrollo.
 > 
-<<<<<<< HEAD
 > **Última actualización**: 2025-12-15 (Refactoring de packages completado - Sistema operativo con autenticación)
-=======
-> **Última actualización**: 2025-12-15
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 
 ---
 
@@ -14,29 +10,19 @@
 
 ### Hardware
 - **ESP32 NodeMCU** (CP2102) - Nodo de riego con WiFi
-<<<<<<< HEAD
 - **Relés 4CH TTL** - Control de hasta 8 zonas de riego
-=======
-- **Relés 4CH TTL** - Control de 4 zonas de riego
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 - **Sensor capacitivo de humedad** (v2.0) - Monitoreo de suelo
 
 ### Backend
 - **Java 17+** con Spring Boot 3.4.0
-<<<<<<< HEAD
 - **Package base**: `ar.net.dac.iot.irrigacion` (refactorizado desde estructura inicial)
-=======
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 - **PostgreSQL 15.15** - Base de datos relacional
 - **HiveMQ MQTT Client 1.3.3** - Cliente MQTT para pub/sub
 - **Flyway 10.20.1** - Migraciones de BD
 - **Maven** - Gestión de dependencias
 - **Broker MQTT**: HiveMQ en `localhost:1883`
-<<<<<<< HEAD
 - **Frontend embebido**: Sirve la SPA Vue.js desde `/static`
 - **Autenticación**: HTTP Basic con credenciales desde variables de entorno
-=======
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 
 ### Frontend
 - **Vue 3** (Composition API) - Framework reactivo
@@ -47,12 +33,8 @@
 - **PWA** (futuro) - Progressive Web App
 
 ### DevOps
-<<<<<<< HEAD
 - **Docker Compose** - Orquestación de servicios
 - **Multi-stage Dockerfile** - Build frontend + backend en una imagen
-=======
-- **Docker Compose** - Orquestación de servicios (PostgreSQL, backend)
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 - **VSCode** - IDE principal
 - **Python 3** - Scripts de mock ESP32
 
@@ -62,7 +44,6 @@
 
 ### Flujo de Datos Principal
 
-<<<<<<< HEAD
 #### Desarrollo (frontend separado)
 ```
 [Frontend Vite:5173] ←HTTP/CORS→ [Backend:8080] ←MQTT→ [ESP32]
@@ -86,14 +67,6 @@
 
 **Desarrollo:** Frontend usa `npm run dev:mobile` con hot reload en puerto 5173
 
-=======
-```
-[Frontend Vue] ←HTTP→ [Backend Spring Boot] ←MQTT→ [ESP32 Nodo]
-                              ↕
-                       [PostgreSQL DB]
-```
-
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 ### Comunicación MQTT
 
 #### Topics implementados:
@@ -113,7 +86,6 @@
 - **UUID**: `550e8400-e29b-41d4-a716-446655440000`
 - Configurado en `.env` del frontend como `VITE_DEFAULT_NODE_ID`
 
-<<<<<<< HEAD
 ### Seguridad y Autenticación
 
 #### HTTP Basic Authentication
@@ -137,8 +109,6 @@ El backend utiliza autenticación HTTP Basic para proteger todos los endpoints:
 - ✅ Template disponible en `.env.example`
 - ⚠️ NO subir credenciales reales al repositorio
 
-=======
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 ---
 
 ## 💾 Modelo de Datos
@@ -162,10 +132,7 @@ updated_at      TIMESTAMPTZ
 **Migraciones aplicadas**:
 - `V1__init.sql`: Schema inicial (agenda, agenda_version, riego_evento, humedad)
 - `V2__add_nombre_to_agenda.sql`: Campo `nombre` opcional
-<<<<<<< HEAD
 - `V3__zona_config.sql`: Tabla zona_config + constraints hasta 8 zonas
-=======
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 
 #### Tabla: `agenda_version`
 ```sql
@@ -198,7 +165,6 @@ raw             JSONB
 created_at      TIMESTAMPTZ
 ```
 
-<<<<<<< HEAD
 #### Tabla: `zona_config` ⭐ NUEVO
 ```sql
 node_id         UUID NOT NULL
@@ -212,8 +178,6 @@ updated_at      TIMESTAMPTZ
 PRIMARY KEY     (node_id, zona)
 ```
 
-=======
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 ---
 
 ## 🔌 APIs Implementadas
@@ -238,7 +202,6 @@ PRIMARY KEY     (node_id, zona)
 
 #### Estado de Zonas
 - `GET /api/nodos/{nodeId}/status`
-<<<<<<< HEAD
   - Estado actual de las zonas configuradas
   - Response: `ZoneStatusResponse[]`
   - Fuente: Caché en memoria actualizado por MQTT
@@ -275,11 +238,6 @@ PRIMARY KEY     (node_id, zona)
   - Reordenar zonas
   - Request: `{"zonas": [1, 3, 2, 4]}`
   - Response: `ZoneConfigResponse[]`
-=======
-  - Estado actual de las 4 zonas
-  - Response: `ZoneStatusResponse[]`
-  - Fuente: Caché en memoria actualizado por MQTT
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 
 #### Comandos Manuales
 - `POST /api/nodos/{nodeId}/cmd`
@@ -321,16 +279,11 @@ String proximoRiego         // "Hoy 18:30 (10min)" o null
 #### `CommandRequest`
 ```java
 UUID nodeId         // Requerido, debe coincidir con path
-<<<<<<< HEAD
 short zona          // 1..8
-=======
-short zona          // 1..4
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 String accion       // "ON" | "OFF"
 Integer duracion    // Segundos 1..7200, requerido si ON
 ```
 
-<<<<<<< HEAD
 #### `ZoneConfigRequest` ⭐ NUEVO
 ```java
 UUID nodeId         // Requerido
@@ -348,13 +301,10 @@ OffsetDateTime createdAt
 OffsetDateTime updatedAt
 ```
 
-=======
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 ### Frontend Services
 
 #### `api.js` (Axios)
 ```javascript
-<<<<<<< HEAD
 // Agendas
 getAgendas(nodeId)
 crearAgenda(nodeId, agendaData)
@@ -377,17 +327,6 @@ updateZoneNombre(nodeId, zona, n, `stores/zoneConfig.js`
 - Eliminar agendas
 - Días de semana mostrados como chips (L, M, X, J, V, S, D)
 - **Selector dinámico de zonas** desde configuración
-=======
-getAgendas(nodeId)
-crearAgenda(nodeId, agendaData)
-eliminarAgenda(nodeId, agendaId)
-getZonesStatus(nodeId)
-iniciarRiegoManual(nodeId, zona, duracion)
-detenerRiego(nodeId, zona)
-```
-
----
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 
 ## 🎯 Features Implementadas
 
@@ -426,7 +365,6 @@ detenerRiego(nodeId, zona)
 - **Servicio**: `MqttGateway.java`
   - Publica comandos en `riego/{nodeId}/cmd/zona/{zona}`
   - Publica agenda sync en `riego/{nodeId}/agenda/sync`
-<<<<<<< HEAD
 Configuración de Zonas ⭐ NUEVO
 - **Vista**: `ZoneConfigView.vue`
 - **Store**: `stores/zoneConfig.js`
@@ -439,9 +377,6 @@ Configuración de Zonas ⭐ NUEVO
 - Datos por defecto: 4 zonas "Zona 1-4" para nodo existente
 
 ### ✅ 
-=======
-
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 ### ✅ Mock ESP32
 - **Script**: `esp32/mock_esp32.py`
 - Simula nodo ESP32 conectado a MQTT
@@ -455,19 +390,11 @@ Configuración de Zonas ⭐ NUEVO
 
 ## 🚧 Limitaciones Conocidas
 
-<<<<<<< HEAD
 ### ~~Configuración de Zonas~~ ✅ RESUELTO
 - ~~**Número fijo**: Siempre 4 zonas (hardcoded)~~ → Ahora soporta hasta 8 zonas configurables
 - ~~**Nombres genéricos**: Backend devuelve "Zona 1", "Zona 2", etc.~~ → Nombres personalizables
 - ~~**No persistente**: No hay tabla de configuración de zonas~~ → Tabla zona_config implementada
 - ~~**Fallback inconsistente**: Mock del store tiene nombres descriptivos que no se usan~~ → Usa configuración real
-=======
-### Configuración de Zonas
-- **Número fijo**: Siempre 4 zonas (hardcoded)
-- **Nombres genéricos**: Backend devuelve "Zona 1", "Zona 2", etc.
-- **No persistente**: No hay tabla de configuración de zonas
-- **Fallback inconsistente**: Mock del store tiene nombres descriptivos que no se usan
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 
 ### Mock ESP32
 - No simula el transcurso del tiempo
@@ -488,7 +415,6 @@ Configuración de Zonas ⭐ NUEVO
 
 ### Variables de Entorno
 
-<<<<<<< HEAD
 #### Archivo `.env` (raíz del proyecto)
 El proyecto utiliza un archivo `.env` para gestionar todas las credenciales de forma segura:
 
@@ -520,23 +446,11 @@ app.security.password: ${APP_SECURITY_PASSWORD:cambiar_en_produccion}
 ```
 
 #### Frontend (`.env` - desarrollo)
-=======
-#### Backend (`backend/src/main/resources/application.yml`)
-```yaml
-spring.datasource.url: jdbc:postgresql://postgres:5432/irrigacion
-mqtt.host: mosquitto
-mqtt.port: 1883
-mqtt.enabled: true
-```
-
-#### Frontend (`.env`)
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 ```
 VITE_API_BASE_URL=http://localhost:8080/api
 VITE_DEFAULT_NODE_ID=550e8400-e29b-41d4-a716-446655440000
 ```
 
-<<<<<<< HEAD
 #### Frontend (`.env.production` - embebido)
 ```
 VITE_API_BASE_URL=/api
@@ -561,13 +475,6 @@ Stage 1: Node.js Alpine - Build frontend → /frontend/dist
 Stage 2: JDK 17 Alpine - Build backend + copiar frontend a /static
 Stage 3: JRE 17 Alpine - Runtime con JAR unificado
 ```
-=======
-### Docker Compose
-- **PostgreSQL**: Puerto 5432
-- **Backend**: Puerto 8080, depende de postgres
-- **Frontend**: Dev server Vite en puerto 5173
-- **MQTT Broker**: HiveMQ en puerto 1883
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 
 ---
 
@@ -591,7 +498,6 @@ Simplifica queries y validación. Alternativa (tabla relacional) sería over-eng
 
 ### ¿Por qué HiveMQ Client?
 - API moderna y asíncrona
-<<<<<<< HEAD
 - Documentación clara
 - Compatible con Spring Boot
 - Soporte para TLS y autenticación
@@ -615,51 +521,33 @@ Simplifica queries y validación. Alternativa (tabla relacional) sería over-eng
 - Refleja dominio real (.net = organización, .dac = subdominio)
 - Agrupa funcionalidad IoT de irrigación claramente
 - Facilita escalabilidad futura (otros proyectos IoT bajo `ar.net.dac.iot`)
-=======
-- Mejor soporte de backpressure
-- Documentación clara
-- Compatible con Spring Boot
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 
 ---
 
 ## 🗺️ Roadmap Futuro
 
-<<<<<<< HEAD
 ### ✅ Completado Recientemente
 - ✅ Refactoring de packages a `ar.net.dac.iot.irrigacion` (2025-12-15)
 - ✅ Autenticación HTTP Basic con variables de entorno (2025-12-15)
 - ✅ Configuración de zonas (nombres personalizados, habilitar/deshabilitar)
 - ✅ Frontend embebido en backend (arquitectura unificada)
 
-=======
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 ### Features Planeadas (No Implementadas)
 - [ ] WebSocket para actualizaciones en tiempo real
 - [ ] Vista de histórico de riego (`GET /api/nodos/{nodeId}/eventos`)
 - [ ] Vista de lecturas de humedad (`GET /api/nodos/{nodeId}/humedad`)
-<<<<<<< HEAD
 - [ ] Drag & drop para reordenar zonas en ZoneConfigView
-=======
-- [ ] Configuración de zonas (nombres personalizados, habilitar/deshabilitar)
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 - [ ] Gestión de múltiples nodos
 - [ ] Mock ESP32 con simulación de tiempo real
 - [ ] PWA (instalable en móvil)
 - [ ] Notificaciones push
 - [ ] Gráficos de consumo de agua
-<<<<<<< HEAD
 - [ ] Autenticación JWT y multi-usuario (migración desde HTTP Basic)
 
 ### Mejoras Técnicas
 - ✅ Gestión segura de credenciales con `.env`
 - ✅ Separación desarrollo/producción documentada
 - ✅ `.gitignore` mejorado con patrones de seguridad
-=======
-- [ ] Autenticación y multi-usuario
-
-### Mejoras Técnicas
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 - [ ] Tests de integración E2E
 - [ ] CI/CD pipeline
 - [ ] Métricas y observabilidad
@@ -667,10 +555,7 @@ Simplifica queries y validación. Alternativa (tabla relacional) sería over-eng
 - [ ] Validación de solapamiento de agendas por zona
 - [ ] Retry logic en MQTT
 - [ ] Manejo de desconexiones ESP32
-<<<<<<< HEAD
 - [ ] MQTT con TLS en producción
-=======
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 
 ---
 
@@ -690,7 +575,6 @@ Simplifica queries y validación. Alternativa (tabla relacional) sería over-eng
 
 ---
 
-<<<<<<< HEAD
 ## � Historial de Cambios Importantes
 
 ### 2025-12-15: Refactoring de Packages y Autenticación
@@ -745,8 +629,6 @@ Invoke-RestMethod -Uri http://localhost:8080/api/nodos/550e8400-e29b-41d4-a716-4
 
 ---
 
-=======
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 ## 🔄 Cómo Mantener Este Documento
 
 ### Cuándo actualizar:
@@ -755,10 +637,7 @@ Invoke-RestMethod -Uri http://localhost:8080/api/nodos/550e8400-e29b-41d4-a716-4
 3. **Decisiones técnicas importantes** (cambio de librería, patrón, etc.)
 4. **Limitaciones descubiertas** (bugs conocidos, restricciones)
 5. **Cambios en configuración** (variables de entorno, puertos)
-<<<<<<< HEAD
 6. **Refactorings importantes** (packages, estructura de código)
-=======
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 
 ### Secciones clave a revisar frecuentemente:
 - **Última actualización** (fecha al inicio)
