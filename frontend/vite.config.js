@@ -22,6 +22,7 @@ export default defineConfig({
         changeOrigin: true
       }
     }
+<<<<<<< HEAD
   },
   build: {
     outDir: 'dist',
@@ -35,5 +36,7 @@ export default defineConfig({
         }
       }
     }
+=======
+>>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
   }
 })

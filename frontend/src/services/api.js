@@ -5,8 +5,12 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
+<<<<<<< HEAD
   timeout: 10000,
   withCredentials: true  // Enviar credenciales (Basic Auth) en peticiones AJAX
+=======
+  timeout: 10000
+>>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 })
 
 // Interceptor para logging (desarrollo)
@@ -153,6 +157,7 @@ export const getHumedad = (nodeId, filtros = {}) => {
   return api.get(`/nodos/${nodeId}/humedad`, { params: filtros })
 }
 
+<<<<<<< HEAD
 // ========== CONFIGURACIÓN DE ZONAS ==========
 
 /**
@@ -228,6 +233,8 @@ export const reorderZones = (nodeId, zonasOrdenadas) => {
   return api.put(`/nodos/${nodeId}/zonas/orden`, { zonas: zonasOrdenadas })
 }
 
+=======
+>>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 // ========== HEALTH CHECK ==========
 
 /**

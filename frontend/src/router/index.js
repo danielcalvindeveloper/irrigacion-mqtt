@@ -22,11 +22,14 @@ const router = createRouter({
       path: '/perfil',
       name: 'perfil',
       component: () => import('@/views/ProfileView.vue')
+<<<<<<< HEAD
     },
     {
       path: '/zonas',
       name: 'zonas',
       component: () => import('@/views/ZoneConfigView.vue')
+=======
+>>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
     }
   ]
 })

@@ -15,8 +15,13 @@
       </v-chip>
     </div>
 
+<<<<<<< HEAD
     <!-- Loading solo en primera carga -->
     <v-progress-linear v-if="loading && zones.length === 0" indeterminate color="primary" class="mb-4"></v-progress-linear>
+=======
+    <!-- Loading -->
+    <v-progress-linear v-if="loading" indeterminate color="primary" class="mb-4"></v-progress-linear>
+>>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
     
     <v-row>
       <v-col
@@ -207,10 +212,15 @@ onMounted(() => {
 
 <style scoped>
 .zone-card {
+<<<<<<< HEAD
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
   /* Evitar el re-layout al actualizar contenido */
   contain: layout style;
+=======
+  transition: all var(--transition-normal);
+  cursor: pointer;
+>>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 }
 
 .zone-card:hover {
@@ -225,10 +235,13 @@ onMounted(() => {
 .pb-16 {
   padding-bottom: 80px !important;
 }
+<<<<<<< HEAD
 
 /* Transiciones suaves para cambios de contenido */
 .zone-card .v-card-text,
 .zone-card .v-card-title {
   transition: opacity 0.15s ease;
 }
+=======
+>>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1
 </style>
