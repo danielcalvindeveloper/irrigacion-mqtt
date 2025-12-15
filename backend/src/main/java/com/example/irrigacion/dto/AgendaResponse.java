@@ -7,6 +7,7 @@ import java.util.UUID;
 public class AgendaResponse {
     private UUID id;
     private UUID nodeId;
+    private String nombre;
     private short zona;
     private List<String> diasSemana;
     private String horaInicio;
@@ -29,6 +30,14 @@ public class AgendaResponse {
 
     public void setNodeId(UUID nodeId) {
         this.nodeId = nodeId;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
     }
 
     public short getZona() {
