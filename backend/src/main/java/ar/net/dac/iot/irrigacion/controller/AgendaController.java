@@ -27,19 +27,11 @@ public class AgendaController {
 
     private final AgendaService agendaService;
     private final MqttGateway mqttGateway;
-<<<<<<< HEAD:backend/src/main/java/ar/net/dac/iot/irrigacion/controller/AgendaController.java
     private final ZoneStatusService zoneStatusService;
 
     public AgendaController(AgendaService agendaService, 
                           Optional<MqttGateway> mqttGateway,
                           ZoneStatusService zoneStatusService) {
-=======
-    private final com.example.irrigacion.service.ZoneStatusService zoneStatusService;
-
-    public AgendaController(AgendaService agendaService, 
-                          Optional<MqttGateway> mqttGateway,
-                          com.example.irrigacion.service.ZoneStatusService zoneStatusService) {
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1:backend/src/main/java/com/example/irrigacion/controller/AgendaController.java
         this.agendaService = agendaService;
         this.mqttGateway = mqttGateway.orElse(null);
         this.zoneStatusService = zoneStatusService;
@@ -65,11 +57,7 @@ public class AgendaController {
     }
 
     @GetMapping("/status")
-<<<<<<< HEAD:backend/src/main/java/ar/net/dac/iot/irrigacion/controller/AgendaController.java
     public List<ZoneStatusResponse> status(@PathVariable UUID nodeId) {
-=======
-    public List<com.example.irrigacion.dto.ZoneStatusResponse> status(@PathVariable UUID nodeId) {
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1:backend/src/main/java/com/example/irrigacion/controller/AgendaController.java
         return zoneStatusService.getStatus(nodeId);
     }
 

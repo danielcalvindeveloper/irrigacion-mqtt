@@ -1,17 +1,9 @@
-<<<<<<< HEAD:backend/src/main/java/ar/net/dac/iot/irrigacion/service/ZoneStatusService.java
 package ar.net.dac.iot.irrigacion.service;
 
 import ar.net.dac.iot.irrigacion.dto.ZoneStatusResponse;
 import ar.net.dac.iot.irrigacion.model.Agenda;
 import ar.net.dac.iot.irrigacion.repository.AgendaRepository;
 import ar.net.dac.iot.irrigacion.service.ZoneConfigService;
-=======
-package com.example.irrigacion.service;
-
-import com.example.irrigacion.dto.ZoneStatusResponse;
-import com.example.irrigacion.model.Agenda;
-import com.example.irrigacion.repository.AgendaRepository;
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1:backend/src/main/java/com/example/irrigacion/service/ZoneStatusService.java
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -27,30 +19,21 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class ZoneStatusService {
     private final AgendaRepository agendaRepository;
-<<<<<<< HEAD:backend/src/main/java/ar/net/dac/iot/irrigacion/service/ZoneStatusService.java
     private final ZoneConfigService zoneConfigService;
-=======
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1:backend/src/main/java/com/example/irrigacion/service/ZoneStatusService.java
     
     // Estado en memoria: nodeId -> zona -> status
     private final Map<String, Map<Integer, ZoneStatus>> statusCache = new ConcurrentHashMap<>();
 
-<<<<<<< HEAD:backend/src/main/java/ar/net/dac/iot/irrigacion/service/ZoneStatusService.java
     public ZoneStatusService(AgendaRepository agendaRepository,
                             ZoneConfigService zoneConfigService) {
         this.agendaRepository = agendaRepository;
         this.zoneConfigService = zoneConfigService;
-=======
-    public ZoneStatusService(AgendaRepository agendaRepository) {
-        this.agendaRepository = agendaRepository;
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1:backend/src/main/java/com/example/irrigacion/service/ZoneStatusService.java
     }
 
     public List<ZoneStatusResponse> getStatus(UUID nodeId) {
         List<ZoneStatusResponse> result = new ArrayList<>();
         Map<Integer, ZoneStatus> nodeStatus = statusCache.getOrDefault(nodeId.toString(), new ConcurrentHashMap<>());
         
-<<<<<<< HEAD:backend/src/main/java/ar/net/dac/iot/irrigacion/service/ZoneStatusService.java
         // Obtener solo las zonas configuradas y habilitadas
         var zonasConfiguradas = zoneConfigService.listEnabledByNode(nodeId);
         
@@ -60,14 +43,6 @@ public class ZoneStatusService {
             response.setNombre(zonaConfig.getNombre());
             
             ZoneStatus status = nodeStatus.get((int) zonaConfig.getZona());
-=======
-        for (int zona = 1; zona <= 4; zona++) {
-            ZoneStatusResponse response = new ZoneStatusResponse();
-            response.setZona(zona);
-            response.setNombre("Zona " + zona);
-            
-            ZoneStatus status = nodeStatus.get(zona);
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1:backend/src/main/java/com/example/irrigacion/service/ZoneStatusService.java
             if (status != null) {
                 response.setActiva(status.activa);
                 response.setTiempoRestanteSeg(status.tiempoRestanteSeg);
@@ -77,11 +52,7 @@ public class ZoneStatusService {
             }
             
             // Calcular próxima agenda
-<<<<<<< HEAD:backend/src/main/java/ar/net/dac/iot/irrigacion/service/ZoneStatusService.java
             response.setProximoRiego(calcularProximoRiego(nodeId, zonaConfig.getZona()));
-=======
-            response.setProximoRiego(calcularProximoRiego(nodeId, zona));
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1:backend/src/main/java/com/example/irrigacion/service/ZoneStatusService.java
             
             result.add(response);
         }

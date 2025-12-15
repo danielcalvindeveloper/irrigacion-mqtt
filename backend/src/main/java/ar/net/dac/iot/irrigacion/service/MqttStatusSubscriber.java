@@ -1,8 +1,4 @@
-<<<<<<< HEAD:backend/src/main/java/ar/net/dac/iot/irrigacion/service/MqttStatusSubscriber.java
 package ar.net.dac.iot.irrigacion.service;
-=======
-package com.example.irrigacion.service;
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1:backend/src/main/java/com/example/irrigacion/service/MqttStatusSubscriber.java
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5BlockingClient;

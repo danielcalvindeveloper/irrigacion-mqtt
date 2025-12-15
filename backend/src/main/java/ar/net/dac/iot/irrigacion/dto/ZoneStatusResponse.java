@@ -1,8 +1,4 @@
-<<<<<<< HEAD:backend/src/main/java/ar/net/dac/iot/irrigacion/dto/ZoneStatusResponse.java
 package ar.net.dac.iot.irrigacion.dto;
-=======
-package com.example.irrigacion.dto;
->>>>>>> 83d6e69e1375cfe708f4813fbea4b5d356111ce1:backend/src/main/java/com/example/irrigacion/dto/ZoneStatusResponse.java
 
 public class ZoneStatusResponse {
     private int zona;
