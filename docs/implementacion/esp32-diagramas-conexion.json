@@ -1,0 +1,368 @@
+{
+  "version": "1.0.0",
+  "tipo": "Fritzing Circuit Diagram",
+  "proyecto": "Sistema de Riego ESP32 - 8 Zonas",
+  "descripcion": "Diagrama de conexión completo para ESP32 con módulo de relés 8CH y sensores de humedad",
+  "autor": "Sistema de Riego MQTT",
+  "fecha": "2025-12-16",
+  
+  "componentes": {
+    "esp32": {
+      "tipo": "ESP32 NodeMCU DevKit v1",
+      "chip": "CP2102",
+      "pines_totales": 38,
+      "voltaje_operacion": "3.3V",
+      "alimentacion": "5V via USB o VIN",
+      "url_datasheet": "https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf"
+    },
+    
+    "modulo_reles": {
+      "tipo": "Módulo Relé 8 Canales",
+      "voltaje_control": "3.3V o 5V",
+      "voltaje_conmutacion": "220V AC / 30V DC",
+      "corriente_max": "10A por canal",
+      "logica": "Activo BAJO (LOW=ON, HIGH=OFF)",
+      "optoacoplador": true,
+      "led_indicador": true,
+      "pines": {
+        "VCC": "Alimentación +5V (desde fuente externa)",
+        "GND": "Tierra común",
+        "IN1-IN8": "Señales de control desde ESP32"
+      },
+      "notas": "NO alimentar desde pin 5V del ESP32. Usar fuente externa de al menos 2A"
+    },
+    
+    "sensores_humedad": {
+      "tipo": "Sensor Capacitivo de Humedad v2.0",
+      "cantidad": 6,
+      "voltaje": "3.3V - 5V",
+      "salida": "Analógica 0-3.3V",
+      "resolucion_adc": "12-bit (0-4095)",
+      "rango_valores": {
+        "aire_seco": "3000-4095",
+        "humedo": "1000-1500",
+        "en_agua": "300-700"
+      },
+      "pines": {
+        "VCC": "3.3V",
+        "GND": "Tierra",
+        "AOUT": "GPIO ADC del ESP32"
+      },
+      "calibracion_requerida": true
+    },
+    
+    "electrovalvulas": {
+      "tipo": "Electroválvula solenoide",
+      "cantidad": 8,
+      "voltaje": "24V AC o 12V DC",
+      "tipo_valvula": "Normalmente Cerrada (NC)",
+      "conexion": "Via contacto NO (Normalmente Abierto) del relé",
+      "corriente": "200-500mA típico",
+      "rosca": "1/2\" o 3/4\" según modelo"
+    },
+    
+    "fuente_alimentacion": {
+      "tipo": "Fuente switching 5V DC",
+      "voltaje_salida": "5V",
+      "corriente_minima": "2A",
+      "corriente_recomendada": "3-5A",
+      "conectores": {
+        "esp32": "USB micro o cable a VIN",
+        "modulo_reles": "VCC del módulo de relés"
+      },
+      "protecciones": "Cortocircuito, sobrecarga"
+    }
+  },
+  
+  "conexiones": {
+    "esp32_a_modulo_reles": {
+      "descripcion": "Señales de control digitales",
+      "conexiones": [
+        {"esp32_pin": "GPIO4", "rele_pin": "IN1", "zona": 1, "color_cable": "naranja"},
+        {"esp32_pin": "GPIO5", "rele_pin": "IN2", "zona": 2, "color_cable": "amarillo"},
+        {"esp32_pin": "GPIO13", "rele_pin": "IN3", "zona": 3, "color_cable": "verde"},
+        {"esp32_pin": "GPIO14", "rele_pin": "IN4", "zona": 4, "color_cable": "azul"},
+        {"esp32_pin": "GPIO15", "rele_pin": "IN5", "zona": 5, "color_cable": "violeta"},
+        {"esp32_pin": "GPIO16", "rele_pin": "IN6", "zona": 6, "color_cable": "gris"},
+        {"esp32_pin": "GPIO17", "rele_pin": "IN7", "zona": 7, "color_cable": "blanco"},
+        {"esp32_pin": "GPIO18", "rele_pin": "IN8", "zona": 8, "color_cable": "marrón"}
+      ],
+      "tierra": {
+        "esp32_pin": "GND",
+        "rele_pin": "GND",
+        "color_cable": "negro"
+      },
+      "notas": "Los pines GPIO envían señal LOW para activar el relé (lógica invertida)"
+    },
+    
+    "esp32_a_sensores_humedad": {
+      "descripcion": "Lectura analógica ADC de sensores",
+      "conexiones": [
+        {"sensor": "Zona 1", "esp32_adc": "GPIO32", "vcc": "3.3V", "gnd": "GND"},
+        {"sensor": "Zona 2", "esp32_adc": "GPIO33", "vcc": "3.3V", "gnd": "GND"},
+        {"sensor": "Zona 3", "esp32_adc": "GPIO34", "vcc": "3.3V", "gnd": "GND"},
+        {"sensor": "Zona 4", "esp32_adc": "GPIO35", "vcc": "3.3V", "gnd": "GND"},
+        {"sensor": "Zona 5", "esp32_adc": "GPIO36", "vcc": "3.3V", "gnd": "GND"},
+        {"sensor": "Zona 6", "esp32_adc": "GPIO39", "vcc": "3.3V", "gnd": "GND"}
+      ],
+      "notas": "GPIO34-39 son solo INPUT. No usar pull-ups internos en estos pines."
+    },
+    
+    "reles_a_electrovalvulas": {
+      "descripcion": "Conmutación de alta tensión/corriente",
+      "esquema": "Para cada zona (1-8)",
+      "conexion_por_zona": {
+        "fuente_24v_ac": {
+          "fase": "Conectar a electroválvula terminal L",
+          "neutro": "Conectar a relé COM (común)"
+        },
+        "rele": {
+          "COM": "Neutro de fuente 24V AC",
+          "NO": "Terminal N de electroválvula"
+        },
+        "resultado": "Relé ON → Circuito cerrado → Electroválvula abierta"
+      },
+      "advertencias": [
+        "NO tocar conexiones con el sistema energizado",
+        "Usar cable apropiado para 220V si usa AC",
+        "Verificar polaridad si usa 12V DC",
+        "Instalar fusible/disyuntor en fuente AC"
+      ]
+    },
+    
+    "alimentacion": {
+      "fuente_5v_a_esp32": {
+        "opcion_1": "USB micro → ESP32 (desarrollo)",
+        "opcion_2": "Fuente 5V → VIN pin del ESP32 (producción)"
+      },
+      "fuente_5v_a_modulo_reles": {
+        "conexion": "Fuente 5V (+) → VCC del módulo",
+        "tierra": "Fuente 5V (-) → GND del módulo",
+        "importante": "NO usar pin 5V del ESP32"
+      },
+      "tierra_comun": {
+        "descripcion": "Conectar todos los GND",
+        "componentes": ["ESP32", "Módulo relés", "Sensores", "Fuente 5V"],
+        "razon": "Referencia de voltaje común para señales digitales"
+      }
+    }
+  },
+  
+  "layout_fisico": {
+    "caja_contenedora": {
+      "tipo": "Caja estanca IP65",
+      "dimensiones_minimas": "200x150x75mm",
+      "material": "ABS o policarbonato",
+      "montaje": "Pared o poste",
+      "prensaestopas": "Para cables de sensores y electroválvulas"
+    },
+    
+    "distribucion_interna": {
+      "nivel_superior": "ESP32 en soporte o PCB",
+      "nivel_medio": "Módulo de relés con separación térmica",
+      "nivel_inferior": "Fuente de alimentación",
+      "laterales": "Borneras para conexiones externas"
+    },
+    
+    "protoboard_testing": {
+      "descripcion": "Layout para pruebas en protoboard",
+      "seccion_izquierda": "ESP32 NodeMCU",
+      "seccion_central": "Módulo de relés",
+      "seccion_derecha": "Sensores y LEDs de prueba",
+      "rieles": {
+        "superior": "+5V desde fuente",
+        "inferior": "GND común"
+      }
+    },
+    
+    "pcb_produccion": {
+      "recomendacion": "Diseñar PCB custom con KiCad o EasyEDA",
+      "capas": "2 capas (suficiente para este proyecto)",
+      "componentes_soldados": [
+        "Headers para ESP32 (socketable)",
+        "Headers para módulo de relés",
+        "Borneras de tornillo para sensores",
+        "Borneras de tornillo para electroválvulas (salida relés)",
+        "Conector barrel jack para fuente 5V",
+        "Capacitores de desacople 100nF cerca de cada GPIO",
+        "LED indicador de power + resistencia 220Ω"
+      ]
+    }
+  },
+  
+  "diagrama_bloques_ascii": [
+    "                    ┌──────────────────┐",
+    "                    │  Fuente 5V 3A    │",
+    "                    └────┬────────┬────┘",
+    "                         │        │",
+    "                    ┌────▼────┐   │",
+    "                    │  ESP32  │   │",
+    "                    │ NodeMCU │   │",
+    "                    └────┬────┘   │",
+    "                         │        │",
+    "      ┌──────────────────┼────────┼──────────────────┐",
+    "      │                  │        │                  │",
+    " ┌────▼────┐       ┌─────▼────────▼─────┐      ┌────▼─────┐",
+    " │ Sensor  │       │  Módulo Relés 8CH  │      │ Sensor   │",
+    " │ Hum. Z1 │       │                    │      │ Hum. Z2  │",
+    " └─────────┘       └─┬─┬─┬─┬─┬─┬─┬─┬────┘      └──────────┘",
+    "                     │ │ │ │ │ │ │ │",
+    "                 ┌───▼─▼─▼─▼─▼─▼─▼─▼───┐",
+    "                 │  8x Electroválvulas  │",
+    "                 │  (24V AC / 12V DC)   │",
+    "                 └──────────────────────┘"
+  ],
+  
+  "verificacion_conexiones": {
+    "paso_1": {
+      "titulo": "Verificar alimentación",
+      "acciones": [
+        "Conectar solo fuente 5V a ESP32 y módulo de relés",
+        "Medir voltaje entre VIN y GND del ESP32 (debe ser ~5V)",
+        "Verificar LED de power en módulo de relés encendido"
+      ]
+    },
+    "paso_2": {
+      "titulo": "Test de relés",
+      "acciones": [
+        "Cargar sketch de test que activa relés secuencialmente",
+        "Verificar que LED de cada relé enciende al activar",
+        "Medir continuidad entre COM y NO cuando relé está activo"
+      ]
+    },
+    "paso_3": {
+      "titulo": "Test de sensores",
+      "acciones": [
+        "Conectar sensores a pines ADC",
+        "Leer valores con sensor en aire (debe ser >2500)",
+        "Sumergir sensor en agua y verificar valor <1000",
+        "Anotar valores de calibración por sensor"
+      ]
+    },
+    "paso_4": {
+      "titulo": "Test integrado sin carga",
+      "acciones": [
+        "Conectar todo excepto electroválvulas",
+        "Subir firmware completo",
+        "Enviar comando MQTT de riego",
+        "Verificar que relé activa y sensor lee correctamente"
+      ]
+    },
+    "paso_5": {
+      "titulo": "Test final con electroválvulas",
+      "acciones": [
+        "Conectar electroválvulas via relés",
+        "Iniciar riego de 10 segundos en zona 1",
+        "Verificar apertura y cierre de válvula",
+        "Repetir para todas las zonas"
+      ]
+    }
+  },
+  
+  "troubleshooting": {
+    "esp32_no_conecta_wifi": [
+      "Verificar credenciales en Secrets.h",
+      "Acercar ESP32 al router (señal débil)",
+      "Verificar que router usa 2.4GHz (ESP32 no soporta 5GHz)",
+      "Revisar serial monitor para mensajes de error"
+    ],
+    "rele_no_activa": [
+      "Verificar lógica invertida (LOW=ON)",
+      "Medir voltaje en pin IN del módulo (debe ser 0V cuando activo)",
+      "Verificar GND común entre ESP32 y módulo",
+      "Probar con LED externo en pin GPIO para confirmar salida"
+    ],
+    "sensor_lectura_erratica": [
+      "Verificar que pin ADC no tiene pull-up habilitado",
+      "Revisar conexión de GND y VCC del sensor",
+      "Alejar cable del sensor de cables de alta tensión",
+      "Agregar capacitor 100nF entre VCC y GND del sensor"
+    ],
+    "electrovalvula_no_abre": [
+      "Verificar voltaje de electroválvula (24V AC o 12V DC)",
+      "Medir continuidad entre COM y NO del relé cuando activo",
+      "Probar electroválvula directamente con su fuente",
+      "Verificar polaridad si es DC"
+    ],
+    "esp32_se_resetea": [
+      "Fuente de alimentación insuficiente (usar mínimo 2A)",
+      "Agregar capacitor 1000µF en entrada de alimentación",
+      "Evitar activar todos los relés simultáneamente",
+      "Verificar cable USB (si usa alimentación por USB)"
+    ]
+  },
+  
+  "materiales_compra": {
+    "lista_componentes": [
+      {
+        "item": "ESP32 NodeMCU DevKit v1",
+        "cantidad": 1,
+        "precio_aprox_usd": 10,
+        "link_referencia": "AliExpress / MercadoLibre"
+      },
+      {
+        "item": "Módulo relé 8 canales 5V",
+        "cantidad": 1,
+        "precio_aprox_usd": 12,
+        "link_referencia": "AliExpress"
+      },
+      {
+        "item": "Sensor humedad capacitivo v2.0",
+        "cantidad": 6,
+        "precio_aprox_usd": 15,
+        "link_referencia": "Pack de 5-10 sensores"
+      },
+      {
+        "item": "Fuente 5V 3A switching",
+        "cantidad": 1,
+        "precio_aprox_usd": 8,
+        "link_referencia": "Electrónica local"
+      },
+      {
+        "item": "Electroválvulas 24V AC",
+        "cantidad": 8,
+        "precio_aprox_usd": 80,
+        "link_referencia": "Proveedor de riego (10 USD c/u aprox)"
+      },
+      {
+        "item": "Caja estanca IP65",
+        "cantidad": 1,
+        "precio_aprox_usd": 15,
+        "link_referencia": "Ferretería / electrónica"
+      },
+      {
+        "item": "Cables dupont M-F y M-M",
+        "cantidad": "1 kit",
+        "precio_aprox_usd": 5,
+        "link_referencia": "AliExpress"
+      },
+      {
+        "item": "Borneras de tornillo 2-3 pines",
+        "cantidad": 10,
+        "precio_aprox_usd": 5,
+        "link_referencia": "Electrónica local"
+      },
+      {
+        "item": "Protoboard grande",
+        "cantidad": 1,
+        "precio_aprox_usd": 5,
+        "link_referencia": "Testing - opcional"
+      }
+    ],
+    "costo_total_estimado_usd": 155,
+    "notas": "Precios aproximados. Buscar ofertas en packs. Electroválvulas son el componente más caro."
+  },
+  
+  "notas_seguridad": [
+    "⚠️ ADVERTENCIA: Las electroválvulas pueden operar a 220V AC (alta tensión)",
+    "- NO tocar conexiones con el sistema energizado",
+    "- Usar cable adecuado para voltaje de electroválvulas",
+    "- Instalar disyuntor diferencial si usa 220V AC",
+    "- Aislar correctamente todas las conexiones de alta tensión",
+    "- Mantener circuitos de baja tensión (ESP32) separados de alta tensión",
+    "- Usar caja estanca IP65 para instalación exterior",
+    "- Proteger contra cortocircuitos con fusibles",
+    "- Seguir normas eléctricas locales",
+    "- Si no tiene experiencia con electricidad, consultar a un electricista"
+  ]
+}

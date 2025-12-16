@@ -1,0 +1,25 @@
+# PlatformIO
+.pio/
+.vscode/
+.clang_complete
+.gcc-flags.json
+lib/
+libdeps/
+
+# Secrets (NO SUBIR CREDENCIALES)
+src/config/Secrets.h
+
+# Build artifacts
+*.o
+*.elf
+*.bin
+*.hex
+
+# Editor
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test files
+test/

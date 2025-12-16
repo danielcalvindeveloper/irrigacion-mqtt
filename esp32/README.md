@@ -1,22 +1,55 @@
 # ESP32 - Nodo de riego
 
-## Mock ESP32 (Simulador en Python)
+Este directorio contiene todo lo necesario para el desarrollo del nodo ESP32 de riego.
+
+---
+
+## 📂 Estructura
+
+```
+esp32/
+├── README.md              # Este archivo
+├── mock_esp32.py          # Simulador Python para testing
+├── requirements.txt       # Dependencias Python
+├── run-mock.bat          # Script para ejecutar mock
+└── firmware/             # ⭐ FIRMWARE REAL ESP32
+    ├── platformio.ini    # Configuración PlatformIO
+    ├── README.md         # Guía del firmware
+    └── src/              # Código fuente C++
+```
+
+---
+
+## 🚀 Quick Start
+
+### Opción 1: Firmware Real (Hardware ESP32)
+
+**Documentación completa**: [`../docs/implementacion/esp32-indice.md`](../docs/implementacion/esp32-indice.md)
+
+```bash
+cd firmware
+cp src/config/Secrets.h.example src/config/Secrets.h
+# Editar Secrets.h con tus credenciales
+pio run --target upload && pio device monitor
+```
+
+**Leer primero**: [`../docs/implementacion/esp32-desarrollo.md`](../docs/implementacion/esp32-desarrollo.md)
+
+### Opción 2: Mock Python (Testing sin hardware)
 
 Para testing sin hardware real, usa el simulador Python que emula un ESP32.
 
-### Requisitos
-
+#### Requisitos
 - Python 3.7+
 - pip
 
-### Instalación
-
+#### Instalación
 ```powershell
 cd esp32
 pip install -r requirements.txt
 ```
 
-### Uso básico
+#### Uso básico
 
 1. Asegúrate de que el stack Docker esté corriendo:
    ```powershell
@@ -28,48 +61,16 @@ pip install -r requirements.txt
    python mock_esp32.py --node-id 550e8400-e29b-41d4-a716-446655440000
    ```
 
-3. En otra terminal, crea una agenda para ese nodeId usando Postman o curl (ver [manual-postman-agendas-cmd.md](../docs/implementacion/manual-postman-agendas-cmd.md))
+3. El mock mostrará la agenda recibida en consola
 
-4. El mock mostrará la agenda recibida en consola
-
-### Opciones
-
+#### Opciones del mock
 ```
 --node-id       UUID del nodo (requerido)
 --mqtt-host     Host del broker (default: localhost)
 --mqtt-port     Puerto del broker (default: 1883)
 ```
 
-### Ejemplo completo
-
-```powershell
-# Terminal 1: Levantar stack
-docker-compose up -d
-
-# Terminal 2: Ejecutar mock
-python esp32/mock_esp32.py --node-id 550e8400-e29b-41d4-a716-446655440000
-
-# Terminal 3: Crear agenda
-curl -X POST http://localhost:8080/api/nodos/550e8400-e29b-41d4-a716-446655440000/agendas \
-  -H "Content-Type: application/json" \
-  -d '{
-    "nombre": "Agenda de prueba",
-    "activa": true,
-    "programaciones": [
-      {
-        "zona": 1,
-        "hora": "07:00",
-        "duracionMinutos": 15,
-        "diasSemana": ["LUNES", "MIERCOLES", "VIERNES"]
-      }
-    ]
-  }'
-
-# Ver en Terminal 2 cómo el mock recibe la agenda
-```
-
-### Qué hace el mock
-
+#### Qué hace el mock
 - ✅ Se conecta al broker MQTT (HiveMQ)
 - ✅ Se suscribe a `riego/{nodeId}/agenda/sync`
 - ✅ Se suscribe a `riego/{nodeId}/cmd/zona/+`
@@ -79,12 +80,99 @@ curl -X POST http://localhost:8080/api/nodos/550e8400-e29b-41d4-a716-44665544000
 
 ---
 
-## Firmware ESP32 real (futuro)
+## 📚 Documentación
 
-Objetivo:
-- Conectar a MQTT (WiFi + TLS)
-- Controlar relés/electroválvulas
-- Modo offline con persistencia en SPIFFS/LittleFS
-- Sincronizar agendas automáticamente
+### 🎯 Índice Principal
+**[`../docs/implementacion/esp32-indice.md`](../docs/implementacion/esp32-indice.md)**
 
-**Estado:** Pendiente de implementación
+Punto de entrada a toda la documentación de desarrollo ESP32.
+
+### 📖 Guías Detalladas
+
+1. **Guía de Desarrollo Completa**  
+   [`../docs/implementacion/esp32-desarrollo.md`](../docs/implementacion/esp32-desarrollo.md)
+   - Hardware requerido
+   - Mapeo de pines
+   - Arquitectura del firmware
+   - Configuración del entorno
+   - Implementación módulo por módulo
+
+2. **Diagramas de Conexión Hardware**  
+   [`../docs/implementacion/esp32-diagramas-conexion.json`](../docs/implementacion/esp32-diagramas-conexion.json)
+   - Especificaciones de componentes
+   - Esquemas de conexión
+   - Lista de materiales
+   - Troubleshooting hardware
+
+3. **Diagramas de Flujo del Firmware**  
+   [`../docs/implementacion/esp32-diagramas-flujo.md`](../docs/implementacion/esp32-diagramas-flujo.md)
+   - Flujo principal del sistema
+   - Máquina de estados
+   - Diagramas de secuencia
+   - Formato Mermaid (visualizable en GitHub/VSCode)
+
+4. **Firmware - Código Base**  
+   [`firmware/README.md`](firmware/README.md)
+   - Quick start del firmware
+   - Estructura del código
+   - Configuración
+   - Testing
+
+---
+
+## 🔧 Hardware Requerido
+
+- **ESP32 NodeMCU** (CP2102)
+- **Módulo de relés 8 canales** (3.3V o 5V)
+- **Sensores de humedad capacitivos** v2.0 (hasta 6)
+- **Fuente de alimentación 5V 3A**
+- **Electroválvulas** 24V AC o 12V DC
+
+**Lista completa con precios**: Ver [`esp32-diagramas-conexion.json`](../docs/implementacion/esp32-diagramas-conexion.json)
+
+---
+
+## 🎓 Flujo de Trabajo Sugerido
+
+1. **Leer documentación**: Comenzar por [`esp32-indice.md`](../docs/implementacion/esp32-indice.md)
+2. **Comprar componentes**: Según lista en diagramas de conexión
+3. **Armar circuito**: Seguir esquemas de [`esp32-diagramas-conexion.json`](../docs/implementacion/esp32-diagramas-conexion.json)
+4. **Configurar firmware**: Copiar `Secrets.h.example` y completar credenciales
+5. **Compilar y subir**: Usar PlatformIO o Arduino IDE
+6. **Testing**: Verificar con mock del backend
+7. **Instalación final**: Montar en caja estanca y conectar electroválvulas
+
+---
+
+## 📝 Estado de Implementación
+
+### Mock Python ✅
+- [x] Simulador MQTT funcional
+- [x] Recibe comandos y agendas
+- [x] Valida versiones
+- [ ] Simula timers de riego (limitación conocida)
+
+### Firmware Real ⏳
+- [x] Estructura del proyecto
+- [x] Configuración PlatformIO
+- [x] Headers principales
+- [x] main.cpp con máquina de estados
+- [ ] WiFiManager (en desarrollo)
+- [ ] MqttManager (en desarrollo)
+- [ ] RelayController (en desarrollo)
+- [ ] HumiditySensor (en desarrollo)
+- [ ] AgendaManager (en desarrollo)
+- [ ] SPIFFSManager (en desarrollo)
+- [ ] TimeSync (en desarrollo)
+
+---
+
+## 🤝 Contribuir
+
+Ver guías de desarrollo en [`../docs/implementacion/`](../docs/implementacion/) antes de contribuir código.
+
+---
+
+## 📄 Licencia
+
+Ver [LICENSE](../LICENSE) para detalles.
