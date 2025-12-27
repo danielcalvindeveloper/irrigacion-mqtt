@@ -189,7 +189,7 @@ flowchart TD
     ExtractVersion --> GetLocalVersion[Obtener version local]
     GetLocalVersion --> CompareVersion{Nueva version > Local?}
     
-    CompareVersion -->|No| IgnoreOld[Ignorar (ya actualizado)]
+    CompareVersion -->|No| IgnoreOld["Ignorar - ya actualizado"]
     CompareVersion -->|Sí| ClearAgendas[Limpiar agendas actuales]
     
     ClearAgendas --> ExtractAgendas[Extraer array de agendas]
