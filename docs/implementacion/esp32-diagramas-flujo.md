@@ -27,7 +27,7 @@ flowchart TD
     InitRelays --> InitSensor[Configurar pin ADC de sensor A0]
     InitSensor --> InitDisplay[Inicializar Display OLED]
     InitDisplay --> InitLittleFS[Montar LittleFS]
-    InitLittleFS --> LoadConfig{¿Config guardada?}
+    InitLittleFS --> LoadConfig{"Config guardada?"}
     
     LoadConfig -->|Sí| LoadAgendas[Cargar agendas desde SPIFFS]
     LoadConfig -->|No| DefaultConfig[Usar configuración por defecto]
@@ -211,7 +211,7 @@ flowchart TD
     CheckDays -->|No| SkipAgenda
     CheckDays -->|Sí| AddAgenda[Agregar a lista local]
     
-    AddAgenda --> MoreAgendas{¿Más agendas?}
+    AddAgenda --> MoreAgendas{"Más agendas?"}
     MoreAgendas -->|Sí| LoopAgendas
     MoreAgendas -->|No| UpdateLocalVersion[Actualizar version local]
     
@@ -282,7 +282,7 @@ flowchart TD
     PublishIfOnline -->|Sí| PublishEvent[Publicar evento a MQTT]
     PublishIfOnline -->|No| NextAgenda
     
-    PublishEvent --> NextAgenda[¿Siguiente agenda?]
+    PublishEvent --> NextAgenda["Siguiente agenda?"]
     LogSkip --> NextAgenda
     NextAgenda -->|Sí| LoopAgendas
     NextAgenda -->|No| End([Fin])
@@ -309,20 +309,20 @@ flowchart TD
     
     InitLoop --> CheckZone{i < MAX_ZONES?}
     CheckZone -->|No| End
-    CheckZone -->|Sí| IsActive{Zona[i] activa?}
+    CheckZone -->|Sí| IsActive{"Zona i activa?"}
     
     IsActive -->|No| NextZone
-    IsActive -->|Sí| CheckTimer{Timer[i] > 0?}
+    IsActive -->|Sí| CheckTimer{"Timer i > 0?"}
     
-    CheckTimer -->|No| TurnOffRelay[Apagar relé zona[i]]
-    CheckTimer -->|Sí| DecrementTimer[Timer[i]--]
+    CheckTimer -->|No| TurnOffRelay["Apagar relé zona i"]
+    CheckTimer -->|Sí| DecrementTimer["Timer i decrementa"]
     
-    TurnOffRelay --> UpdateState[zoneState[i] = false]
+    TurnOffRelay --> UpdateState["zoneState i = false"]
     UpdateState --> LogOff[Log: riego finalizado]
     LogOff --> PublishStatusOff[Publicar estado OFF]
     PublishStatusOff --> NextZone
     
-    DecrementTimer --> CheckZero{Timer[i] == 0?}
+    DecrementTimer --> CheckZero{"Timer i == 0?"}
     CheckZero -->|Sí| TurnOffRelay
     CheckZero -->|No| PublishStatusOn[Publicar estado ON con tiempo restante]
     
