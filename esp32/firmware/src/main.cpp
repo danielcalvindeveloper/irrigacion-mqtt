@@ -584,6 +584,10 @@ void fetchAndStoreAgendas() {
     
     Logger::info("Agendas obtenidas exitosamente del backend");
     
+    // El HTTP retorna un array directo [...], pero el ESP8266 espera formato MQTT: {"agendas": [...]}
+    // Envolver el array en un objeto para mantener compatibilidad con AgendaManager
+    String wrappedJson = "{\"agendas\":" + agendasJson + "}";
+    
     // Procesar como si fuera una sincronización MQTT
-    onAgendaSync(agendasJson);
+    onAgendaSync(wrappedJson);
 }

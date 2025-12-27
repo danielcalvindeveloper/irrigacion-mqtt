@@ -80,27 +80,30 @@ public class ZoneStatusService {
 
         LocalDate hoy = LocalDate.now();
         LocalTime ahora = LocalTime.now();
-        String diaSemanaHoy = getDiaSemana(hoy.getDayOfWeek());
         
         Agenda proximaAgenda = null;
         LocalDate fechaProxima = null;
+        int diasMinimoAdelante = Integer.MAX_VALUE;
         
         for (Agenda agenda : agendas) {
-            // Buscar en los próximos 7 días
-            for (int diasAdelante = 0; diasAdelante < 7; diasAdelante++) {
+            // Buscar en los próximos 7 días (0 = hoy, 1 = mañana, ..., 6 = dentro de 6 días, 7 = misma hora la próxima semana)
+            for (int diasAdelante = 0; diasAdelante <= 7; diasAdelante++) {
                 LocalDate fecha = hoy.plusDays(diasAdelante);
                 String diaSemana = getDiaSemana(fecha.getDayOfWeek());
                 
                 if (agenda.getDiasSemana().contains(diaSemana)) {
                     // Si es hoy, verificar que no haya pasado la hora
-                    if (diasAdelante == 0 && agenda.getHoraInicio().isBefore(ahora)) {
-                        continue;
+                    if (diasAdelante == 0 && !agenda.getHoraInicio().isAfter(ahora)) {
+                        continue; // Ya pasó, buscar próxima ocurrencia
                     }
                     
-                    if (proximaAgenda == null || diasAdelante == 0 || 
-                        (fechaProxima != null && fecha.isBefore(fechaProxima))) {
+                    // Seleccionar la agenda más próxima (menor días adelante, o si empate, la de menor hora)
+                    if (diasAdelante < diasMinimoAdelante || 
+                        (diasAdelante == diasMinimoAdelante && proximaAgenda != null && 
+                         agenda.getHoraInicio().isBefore(proximaAgenda.getHoraInicio()))) {
                         proximaAgenda = agenda;
                         fechaProxima = fecha;
+                        diasMinimoAdelante = diasAdelante;
                     }
                     break; // Ya encontramos el próximo para esta agenda
                 }

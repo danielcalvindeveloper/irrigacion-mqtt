@@ -2,7 +2,67 @@
 
 Este documento registra todos los cambios relevantes realizados en el firmware, hardware y documentación del proyecto. Debe mantenerse actualizado en cada sesión de trabajo.
 
-## 2025-12-27
+## 2025-12-27 (Sesión Tarde)
+
+### Bugfix: Frontend No Muestra "Próximo Riego" Correctamente
+
+**Problema:**
+- La vista de Inicio del frontend no muestra correctamente el próximo riego programado
+- Zonas con agendas configuradas mostraban "Próximo: Sin agenda"
+- Ejemplo: Zona 4 con agenda para Sábado a las 17:13 mostraba "Sin agenda"
+
+**Causa:**
+- La lógica en `ZoneStatusService.calcularProximoRiego()` solo buscaba en los próximos 7 días (0-6)
+- Si la hora de hoy ya pasó (17:13 < 19:28), no incluía el próximo día de la semana (día 7)
+- Para agendas de un solo día (ej: solo Sábado), no encontraba el próximo Sábado
+
+**Solución:**
+- Modificado el bucle para buscar hasta 7 días adelante (0-7 inclusive)
+- Esto permite encontrar la próxima ocurrencia semanal del mismo día
+- Mejorada la lógica de selección para elegir la agenda más próxima
+- Corregida la condición de hora pasada: `!isAfter(ahora)` en lugar de `isBefore(ahora)`
+
+**Archivos Modificados:**
+- `backend/src/main/java/ar/net/dac/iot/irrigacion/service/ZoneStatusService.java`
+
+**Prueba:**
+- Reiniciar backend
+- Verificar que todas las zonas con agendas muestren "Próximo: [fecha] [hora]"
+- Para Zona 4 (Sábado 17:13): debería mostrar "Próximo sábado 17:13"
+
+---
+
+### Bugfix: Agendas No Ejecutándose
+
+**Problema:**
+- Las agendas dejaron de ejecutarse después de la sincronización HTTP
+- Log mostraba error: `"JSON no contiene campo 'agendas'"`
+- El ESP8266 estaba guardando el JSON del endpoint HTTP directamente, que retorna un array `[...]`
+- El AgendaManager espera formato MQTT con objeto envolvente: `{"agendas": [...]}`
+
+**Causa:**
+- Inconsistencia de formato entre endpoint HTTP y mensaje MQTT
+- `GET /api/nodos/{nodeId}/agendas` retorna `List<AgendaResponse>` (array directo)
+- Mensaje MQTT `riego/{nodeId}/agenda/sync` envía `{"version": X, "agendas": [...]}`
+- La función `fetchAndStoreAgendas()` en main.cpp guardaba el array HTTP sin envolver
+
+**Solución:**
+- Modificado `fetchAndStoreAgendas()` en [main.cpp](esp32/firmware/src/main.cpp)
+- Ahora envuelve el array HTTP en objeto: `{"agendas": [...]}`
+- Mantiene compatibilidad con AgendaManager sin cambios en el backend
+- Las agendas ahora se cargan correctamente desde HTTP y MQTT
+
+**Archivos Modificados:**
+- `esp32/firmware/src/main.cpp` (línea ~586)
+
+**Prueba:**
+- Verificar que las agendas se ejecuten correctamente
+- Compilar y flashear firmware actualizado
+- Monitorear logs para confirmar carga correcta de agendas
+
+---
+
+## 2025-12-27 (Sesión Mañana)
 
 ### Firmware ESP8266 - Implementación Completa de Módulos Base
 
