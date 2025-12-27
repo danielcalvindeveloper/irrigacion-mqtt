@@ -1,8 +1,8 @@
-# 🔧 ESP32 - Guía de Desarrollo del Firmware
+# 🔧 ESP8266 - Guía de Desarrollo del Firmware
 
-> **Documento**: Guía técnica completa para desarrollar el firmware del nodo ESP32 de riego
-> **Última actualización**: 2025-12-16
-> **Estado**: En desarrollo - Primera versión
+> **Documento**: Guía técnica completa para desarrollar el firmware del nodo ESP8266 de riego
+> **Última actualización**: 2025-12-27
+> **Estado**: En desarrollo activo - Hardware actualizado
 
 ---
 
@@ -23,33 +23,36 @@
 ## 🎯 Introducción
 
 ### Objetivo
-Desarrollar el firmware para ESP32 que controle hasta 8 zonas de riego mediante:
+Desarrollar el firmware para ESP8266 que controle hasta 4 zonas de riego mediante:
 - Conexión WiFi robusta con reconexión automática
 - Comunicación MQTT con el backend
 - Control de relés para electroválvulas
-- Lectura de sensores de humedad capacitivos
+- Lectura de sensor de humedad capacitivo (1 sensor)
+- Display OLED SSD1306 para monitoreo visual
 - Modo offline con persistencia local
 - Sincronización automática de agendas
 
 ### Especificaciones Técnicas
-- **Microcontrolador**: ESP32 NodeMCU (CP2102)
-- **Clock**: Dual-core 240MHz
-- **RAM**: 520KB SRAM
-- **Flash**: 4MB (SPIFFS/LittleFS para almacenamiento)
+- **Microcontrolador**: ESP8266 NodeMCU (CP2102)
+- **Clock**: Single-core 80MHz
+- **RAM**: 80KB SRAM
+- **Flash**: 4MB (LittleFS para almacenamiento)
 - **WiFi**: 802.11 b/g/n (2.4GHz)
-- **GPIO**: 30 pines disponibles
-- **ADC**: 12-bit, hasta 18 canales
+- **GPIO**: 17 pines disponibles (limitados)
+- **ADC**: 10-bit, 1 canal único (A0)
+- **Display**: OLED SSD1306 128x64px I2C
 - **Voltaje**: 3.3V lógico, alimentación 5V por USB
 
 ### Características del Sistema
-- ✅ Control de 8 zonas de riego independientes
+- ✅ Control de 4 zonas de riego independientes
+- ✅ Display OLED con indicadores visuales (WiFi/MQTT/Zonas)
 - ✅ Ejecución de agendas programadas localmente
 - ✅ Sincronización con backend vía MQTT
 - ✅ Modo offline (continúa ejecutando última agenda conocida)
 - ✅ Comandos manuales inmediatos
-- ✅ Monitoreo de sensores de humedad
+- ✅ Monitoreo de sensor de humedad (1 sensor en A0)
 - ✅ Actualización OTA (Over-The-Air)
-- ✅ Persistencia de configuración en SPIFFS
+- ✅ Persistencia de configuración en LittleFS
 - ✅ Reconexión automática WiFi/MQTT
 
 ---
@@ -58,51 +61,69 @@ Desarrollar el firmware para ESP32 que controle hasta 8 zonas de riego mediante:
 
 ### Componentes Principales
 
-#### 1. ESP32 NodeMCU (CP2102)
-- **Modelo**: DevKit v1 o compatible
-- **Precio estimado**: $8-12 USD
+#### 1. ESP8266 NodeMCU (CP2102)
+- **Modelo**: DevKit v1.0 o compatible
+- **Precio estimado**: $3-6 USD
 - **Características clave**:
-  - 38 pines
+  - 30 pines (17 GPIO utilizables)
   - USB-to-UART CP2102 integrado
   - LED integrado en GPIO2
-  - Botones BOOT y EN
+  - Botón FLASH y RESET
+  - Limitación: Solo 1 ADC (A0)
 
-#### 2. Módulo de Relés 8 Canales
+#### 2. Módulo de Relés 4 Canales
 - **Tipo**: Relé de estado sólido o mecánico
-- **Voltaje de control**: 3.3V (compatible con ESP32) o 5V con level shifter
+- **Voltaje de control**: 3.3V (compatible con ESP8266)
 - **Voltaje de conmutación**: 220V AC / 10A o 24V DC
 - **Optoacoplador**: Sí (aislamiento eléctrico)
 - **Lógica**: Activo BAJO (LOW = ON, HIGH = OFF)
-- **Precio estimado**: $10-15 USD
+- **Precio estimado**: $5-8 USD
 
-**⚠️ Importante**: Verificar si el módulo es de 3.3V o requiere level shifter
+**⚠️ Importante**: Verificar que el módulo sea compatible con 3.3V
 
-#### 3. Sensores de Humedad Capacitivos v2.0
-- **Cantidad**: Hasta 8 (uno por zona)
+#### 3. Sensor de Humedad Capacitivo v2.0
+- **Cantidad**: 1 (solo un ADC disponible en A0)
 - **Tipo**: Capacitivo (evita corrosión vs resistivo)
 - **Voltaje**: 3.3V - 5V
 - **Salida**: Analógica (ADC) 0-3.3V
-- **Rango de valores**: 0-4095 (12-bit ADC)
-  - **Aire seco**: ~3000-4095
-  - **Húmedo**: ~1000-1500
-  - **En agua**: ~300-700
-- **Calibración**: Requerida por sensor
-- **Precio estimado**: $2-3 USD c/u
+- **Rango de valores**: 0-1023 (10-bit ADC ESP8266)
+  - **Aire seco**: ~700-1023
+  - **Húmedo**: ~300-500
+  - **En agua**: ~100-250
+- **Calibración**: Requerida
+- **Precio estimado**: $2-3 USD
 
-#### 4. Fuente de Alimentación
+#### 4. Display OLED SSD1306 I2C
+- **Resolución**: 128x64 píxeles
+- **Interfaz**: I2C (2 pines: SDA, SCL)
+- **Voltaje**: 3.3V - 5V
+- **Dirección I2C**: 0x3C (estándar)
+- **Pines ESP8266**:
+  - **SDA**: D7 (GPIO13)
+  - **SCL**: D3 (GPIO0)
+- **Librerías**: Adafruit SSD1306 + Adafruit GFX
+- **Precio estimado**: $3-5 USD
+- **Características**:
+  - Iconos WiFi/MQTT en cabecera
+  - Indicadores de 4 zonas con estado
+  - Línea de estado inferior
+  - Actualización cada 2 segundos
+
+#### 5. Fuente de Alimentación
 - **Voltaje**: 5V DC
-- **Corriente mínima**: 2A (ESP32 + relés)
-- **Recomendado**: 3-5A para margen de seguridad
+- **Corriente mínima**: 1A (ESP8266 + relés + display)
+- **Recomendado**: 2A para margen de seguridad
 - **Tipo**: Adaptador de pared con barrel jack o USB
-- **⚠️ Advertencia**: NO alimentar relés desde pin 5V del ESP32
+- **⚠️ Advertencia**: NO alimentar relés desde pin 5V del ESP8266
 
-#### 5. Electroválvulas
+#### 6. Electroválvulas
 - **Tipo**: Normalmente cerradas (NC)
 - **Voltaje**: 24V AC o 12V DC (según instalación)
 - **Corriente**: 200-500mA típico
+- **Cantidad**: 4 (una por zona)
 - **Conexión**: Via relés (NO - Normalmente Abierto)
 
-#### 6. Componentes Adicionales
+#### 7. Componentes Adicionales
 - **Cables Dupont**: Macho-hembra y macho-macho
 - **Protoboard**: Para testing (opcional)
 - **PCB custom**: Para instalación permanente (recomendado)
@@ -147,13 +168,19 @@ Desarrollar el firmware para ESP32 que controle hasta 8 zonas de riego mediante:
 ### Criterios de Selección de Pines
 
 #### ✅ Pines SEGUROS para uso general:
-- **GPIO 4, 5, 13, 14, 15, 16, 17, 18**: Relés (salidas digitales)
-- **GPIO 32, 33, 34, 35, 36, 39**: Sensores ADC
+- **GPIO 5 (D1)**: Relé Zona 1
+- **GPIO 4 (D2)**: Relé Zona 2
+- **GPIO 14 (D5)**: Relé Zona 3
+- **GPIO 12 (D6)**: Relé Zona 4
+- **GPIO 13 (D7)**: SDA Display OLED
+- **GPIO 0 (D3)**: SCL Display OLED (pull-up requerido)
+- **A0 (ADC0)**: Sensor de humedad
 
 #### ⚠️ Pines CON RESTRICCIONES:
-- **GPIO 0**: Modo boot (evitar o usar con pull-up)
-- **GPIO 2**: LED integrado (puede usarse pero tiene LED)
-- **GPIO 12**: Estado LOW durante boot (evitar si afecta relés)
+- **GPIO 0 (D3)**: Modo boot (pull-up externo requerido para I2C)
+- **GPIO 2 (D4)**: Boot mode (evitar o configurar correctamente)
+- **GPIO 15 (D8)**: Boot mode (debe estar LOW durante boot)
+- **GPIO 16 (D0)**: No soporta interrupciones, solo OUTPUT/INPUT
 
 #### ❌ Pines NO USAR:
 - **GPIO 6-11**: Conectados a flash SPI (reserved)
@@ -162,18 +189,14 @@ Desarrollar el firmware para ESP32 que controle hasta 8 zonas de riego mediante:
 ### Esquema de Conexión Módulo de Relés
 
 ```
-ESP32 GPIO → Módulo Relé 8CH
+ESP8266 GPIO → Módulo Relé 4CH
 ─────────────────────────────
-GPIO4  → IN1 (Zona 1)
-GPIO5  → IN2 (Zona 2)
-GPIO13 → IN3 (Zona 3)
-GPIO14 → IN4 (Zona 4)
-GPIO15 → IN5 (Zona 5)
-GPIO16 → IN6 (Zona 6)
-GPIO17 → IN7 (Zona 7)
-GPIO18 → IN8 (Zona 8)
-GND    → GND
-VIN/5V → VCC (⚠️ desde fuente externa, NO del ESP32)
+GPIO5  (D1) → IN1 (Zona 1)
+GPIO4  (D2) → IN2 (Zona 2)
+GPIO14 (D5) → IN3 (Zona 3)
+GPIO12 (D6) → IN4 (Zona 4)
+GND         → GND
+VIN/5V      → VCC (⚠️ desde fuente externa, NO del ESP8266)
 ```
 
 **⚠️ Lógica del Relé**: Activo BAJO
@@ -183,34 +206,65 @@ VIN/5V → VCC (⚠️ desde fuente externa, NO del ESP32)
 ### Esquema de Conexión Sensores de Humedad
 
 ```
-Sensor → ESP32
+Sensor → ESP8266
 ──────────────
-VCC → 3.3V
-GND → GND
-AOUT → GPIO32/33/34/35/36/39 (según zona)
+VCC  → 3.3V
+GND  → GND
+AOUT → A0 (ADC0 - único canal ADC disponible)
 ```
 
-**⚠️ Nota**: Si el sensor es de 5V, funciona igual pero con mayor rango de medición.
+**⚠️ Nota**: ESP8266 tiene solo un ADC, por lo que sólo puede leer un sensor. Si necesitas leer más sensores, considera usar un multiplexor analógico CD74HC4067.
+
+### Esquema de Conexión Display OLED
+
+```
+Display OLED SSD1306 → ESP8266
+────────────────────────────────
+VCC  → 3.3V
+GND  → GND
+SDA  → D7 (GPIO13)
+SCL  → D3 (GPIO0)
+```
+
+**Características del Display:**
+- **Resolución**: 128x64 píxeles monocromático
+- **Dirección I2C**: 0x3C (estándar)
+- **Layout de pantalla**:
+  ```
+  ┌────────────────────────────┐
+  │ WiFi:✓ MQTT:✓        12:34│ ← Iconos de estado
+  ├────────────────────────────┤
+  │ Z1:■ 15m  Z2:□ ---        │ ← Zonas 1-2 (■=ON □=OFF)
+  │ Z3:□ ---  Z4:□ ---        │ ← Zonas 3-4
+  ├────────────────────────────┤
+  │ Modo: ONLINE              │ ← Línea de estado
+  └────────────────────────────┘
+  ```
+- **Actualización**: Cada 2 segundos
+- **Librerías**: Adafruit_SSD1306 + Adafruit_GFX
 
 ### Diagrama de Bloques del Sistema
 
 ```
                     ┌──────────────┐
                     │  Fuente 5V   │
-                    │   3-5A DC    │
+                    │   2A DC      │
                     └──────┬───────┘
                            │
            ┌───────────────┼──────────────────┐
            │               │                  │
       ┌────▼────┐    ┌─────▼──────┐    ┌─────▼──────┐
-      │  ESP32  │    │ Módulo 8CH │    │  Sensores  │
+      │ ESP8266 │    │ Módulo 4CH │    │   Sensor   │
       │ NodeMCU │◄──►│   Relés    │    │  Humedad   │
       └────┬────┘    └─────┬──────┘    └─────┬──────┘
            │               │                  │
-      WiFi │          ┌────▼──────┐      [ADC Readings]
-           │          │ 8x Válvulas│
-           │          │  Solenoid │
-           │          └───────────┘
+      ┌────▼────┐     ┌────▼──────┐      [ADC A0]
+      │ Display │     │ 4x Válvulas│
+      │  OLED   │     │  Solenoid │
+      │ 128x64  │     └───────────┘
+      └─────────┘
+           │
+      WiFi │
            │
       ┌────▼─────┐
       │  Router  │
@@ -248,19 +302,21 @@ firmware/
 │   │   └── Secrets.h         # WiFi/MQTT credentials (gitignored)
 │   ├── network/
 │   │   ├── WiFiManager.cpp   # Gestión WiFi con reconexión
-│   │   └── MqttManager.cpp   # Cliente MQTT + pub/sub
+│   │   ├── MqttManager.cpp   # Cliente MQTT + pub/sub
+│   │   └── TimeSync.cpp      # Sincronización NTP
 │   ├── hardware/
-│   │   ├── RelayController.cpp   # Control de relés
-│   │   └── HumiditySensor.cpp    # Lectura ADC sensores
+│   │   ├── RelayController.cpp   # Control de relés (4 zonas)
+│   │   └── HumiditySensor.cpp    # Lectura ADC sensor (A0)
+│   ├── display/
+│   │   └── DisplayManager.cpp    # Gestión OLED SSD1306
 │   ├── scheduler/
 │   │   ├── Agenda.cpp         # Modelo de agenda
 │   │   ├── AgendaManager.cpp  # Gestión de agendas
 │   │   └── TaskScheduler.cpp  # Ejecución temporal
 │   ├── storage/
-│   │   └── SPIFFSManager.cpp  # Persistencia JSON
+│   │   └── SPIFFSManager.cpp  # Persistencia JSON (LittleFS)
 │   └── utils/
-│       ├── Logger.cpp         # Debug serial
-│       └── TimeSync.cpp       # NTP sync
+│       └── Logger.cpp         # Debug serial
 └── platformio.ini             # Configuración PlatformIO
 ```
 
@@ -325,9 +381,9 @@ enum SystemState {
 
 #### platformio.ini
 ```ini
-[env:esp32dev]
-platform = espressif32
-board = esp32dev
+[env:nodemcuv2]
+platform = espressif8266
+board = nodemcuv2
 framework = arduino
 
 ; Configuración de upload
@@ -339,12 +395,16 @@ lib_deps =
     knolleary/PubSubClient@^2.8
     bblanchon/ArduinoJson@^6.21.3
     arduino-libraries/NTPClient@^3.2.1
+    adafruit/Adafruit SSD1306@^2.5.7
+    adafruit/Adafruit GFX Library@^1.11.3
 
 ; Sistema de archivos
 board_build.filesystem = littlefs
 
-; Particiones (opcional, para OTA)
-board_build.partitions = default.csv
+; Optimización de memoria
+build_flags = 
+    -DMQTT_MAX_PACKET_SIZE=1024
+    -DPIO_FRAMEWORK_ARDUINO_LWIP2_LOW_MEMORY
 ```
 
 #### Compilar y Subir
@@ -375,11 +435,10 @@ pio run --target upload && pio device monitor
 
 #### Configuración del Board
 ```
-Board: "ESP32 Dev Module"
+Board: "NodeMCU 1.0 (ESP-12E Module)"
 Upload Speed: "921600"
-CPU Frequency: "240MHz"
-Flash Size: "4MB"
-Partition Scheme: "Default 4MB with spiffs"
+CPU Frequency: "80MHz"
+Flash Size: "4MB (FS:2MB OTA:~1019KB)"
 Port: [Seleccionar COM port del CP2102]
 ```
 
@@ -388,6 +447,8 @@ Instalar desde Library Manager:
 - PubSubClient by Nick O'Leary
 - ArduinoJson by Benoit Blanchon
 - NTPClient by Arduino Libraries
+- Adafruit SSD1306 by Adafruit
+- Adafruit GFX Library by Adafruit
 
 ---
 
@@ -504,18 +565,25 @@ void loop() {
 #define CONFIG_H
 
 // ============= Hardware Config =============
-#define MAX_ZONES 8
-#define LED_PIN 2
+#define MAX_ZONES 4
+#define LED_PIN 16  // GPIO16 (D0)
 
 // Pines de relés (Activo BAJO)
-const int RELAY_PINS[MAX_ZONES] = {4, 5, 13, 14, 15, 16, 17, 18};
+const int RELAY_PINS[MAX_ZONES] = {5, 4, 14, 12};  // D1, D2, D5, D6
 
-// Pines de sensores de humedad (ADC)
-const int SENSOR_PINS[MAX_ZONES] = {32, 33, 34, 35, 36, 39, -1, -1};
+// Pin de sensor de humedad (ADC único)
+#define SENSOR_PIN A0  // A0 (ADC0)
 
-// Calibración de sensores (ajustar por sensor)
-#define SENSOR_WET_VALUE 700    // En agua
-#define SENSOR_DRY_VALUE 3000   // En aire
+// Display OLED I2C
+#define OLED_SDA 13  // D7 (GPIO13)
+#define OLED_SCL 0   // D3 (GPIO0)
+#define OLED_ADDR 0x3C
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+
+// Calibración de sensor (ajustar por sensor)
+#define SENSOR_WET_VALUE 250    // En agua
+#define SENSOR_DRY_VALUE 700    // En aire
 
 // ============= Network Config =============
 #define WIFI_TIMEOUT 30000      // 30 segundos
@@ -532,19 +600,27 @@ const int SENSOR_PINS[MAX_ZONES] = {32, 33, 34, 35, 36, 39, -1, -1};
 // ============= Timing Config =============
 #define STATUS_PUBLISH_INTERVAL 5000   // 5 segundos
 #define HUMIDITY_READ_INTERVAL 60000   // 1 minuto
+#define DISPLAY_UPDATE_INTERVAL 2000   // 2 segundos
 #define MAX_RIEGO_DURATION 7200        // 2 horas max
-#define AGENDA_CHECK_INTERVAL 1000     // 1 segundo
+#define AGENDA_CHECK_INTERVAL 10000    // 10 segundos
 
 // ============= Storage Config =============
 #define AGENDA_FILE "/agendas.json"
 #define CONFIG_FILE "/config.json"
 #define MAX_AGENDAS_PER_ZONE 5
 
+// ============= MQTT Config =============
+#define MQTT_BUFFER_SIZE 1024  // Buffer para mensajes MQTT
+
 // ============= Debug Config =============
 #define DEBUG_SERIAL true
 #define LOG_LEVEL_INFO 1
 #define LOG_LEVEL_WARN 2
 #define LOG_LEVEL_ERROR 3
+
+// ============= Memory Usage =============
+// Flash: 376911 bytes (36.1%)
+// RAM: 37268 bytes (45.5%)
 
 #endif // CONFIG_H
 ```
@@ -592,7 +668,7 @@ esp32/firmware/src/config/Secrets.h
 
 ### 1. RelayController.cpp
 
-**Responsabilidad**: Control de 8 relés con lógica activo-bajo
+**Responsabilidad**: Control de 4 relés con lógica activo-bajo
 
 ```cpp
 #include "RelayController.h"

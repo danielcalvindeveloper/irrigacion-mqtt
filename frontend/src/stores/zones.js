@@ -78,11 +78,13 @@ export const useZonesStore = defineStore('zones', () => {
   }
 
   async function startWatering(zonaId, duracion) {
+    console.log('🔍 startWatering - zonaId:', zonaId, 'duracion (minutos):', duracion)
     loading.value = true
     error.value = null
     
     try {
       await api.iniciarRiegoManual(nodeId.value, zonaId, duracion)
+      console.log('✅ Comando enviado correctamente')
       
       // Actualizar estado local optimísticamente
       const zona = zones.value.find(z => z.id === zonaId)

@@ -1,9 +1,23 @@
 # Stack Tecnológico
 
 ## Hardware
-- ESP32 NodeMCU (CP2102)
-- Relés 4CH TTL
-- Sensor capacitivo de humedad de suelo (v2.0)
+- **ESP8266 NodeMCU** (CP2102)
+  - Microcontrolador: ESP8266 (Tensilica L106 32-bit @ 80/160MHz)
+  - RAM: 80KB (usuario) + 36KB (sistema)
+  - Flash: 4MB
+  - WiFi: 802.11 b/g/n (2.4GHz)
+  - GPIO: 11 pines digitales disponibles
+  - ADC: 1 canal analógico (10-bit, 0-1V)
+- **Relés 4CH TTL**
+  - Lógica invertida (LOW=ON, HIGH=OFF)
+  - 4 zonas de riego controladas
+- **Display OLED SSD1306** ⭐ NUEVO
+  - Resolución: 128x64 píxeles monocromático
+  - Interfaz: I2C (dirección 0x3C)
+  - Muestra: Estado WiFi/MQTT, zonas activas, mensajes del sistema
+- **Sensor capacitivo de humedad de suelo** (v2.0)
+  - 1 sensor conectado al ADC (A0)
+  - Expansión futura requiere multiplexor externo (ej: CD4051)
 
 ## Backend
 - Java 17+

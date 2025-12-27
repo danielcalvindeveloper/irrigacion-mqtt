@@ -1,8 +1,8 @@
-# 📊 Diagramas de Flujo - Firmware ESP32
+# 📊 Diagramas de Flujo - Firmware ESP8266
 
-> **Documento**: Diagramas visuales del comportamiento del firmware ESP32
+> **Documento**: Diagramas visuales del comportamiento del firmware ESP8266
 > **Formato**: Mermaid (compatible con GitHub, VSCode, herramientas de documentación)
-> **Última actualización**: 2025-12-16
+> **Última actualización**: 2025-12-27
 
 ---
 
@@ -22,11 +22,12 @@
 
 ```mermaid
 flowchart TD
-    Start([Inicio ESP32]) --> Init[Inicializar Hardware]
+    Start([Inicio ESP8266]) --> Init[Inicializar Hardware]
     Init --> InitRelays[Configurar pines de relés como OUTPUT]
-    InitRelays --> InitSensors[Configurar pines ADC de sensores]
-    InitSensors --> InitSPIFFS[Montar SPIFFS]
-    InitSPIFFS --> LoadConfig{¿Config guardada?}
+    InitRelays --> InitSensor[Configurar pin ADC de sensor A0]
+    InitSensor --> InitDisplay[Inicializar Display OLED]
+    InitDisplay --> InitLittleFS[Montar LittleFS]
+    InitLittleFS --> LoadConfig{¿Config guardada?}
     
     LoadConfig -->|Sí| LoadAgendas[Cargar agendas desde SPIFFS]
     LoadConfig -->|No| DefaultConfig[Usar configuración por defecto]
@@ -73,9 +74,10 @@ flowchart TD
     
     CommonTasks[Tareas Comunes]
     CommonTasks --> UpdateRelays[Actualizar timers de relés]
-    UpdateRelays --> CheckAgendas[Verificar agendas programadas]
-    CheckAgendas --> ReadSensors[Leer sensores de humedad]
-    ReadSensors --> Delay[Delay 100ms]
+    UpdateRelays --> UpdateDisplay[Actualizar display OLED]
+    UpdateDisplay --> CheckAgendas[Verificar agendas programadas]
+    CheckAgendas --> ReadSensor[Leer sensor de humedad]
+    ReadSensor --> Delay[Delay 100ms]
     Delay --> Loop
 ```
 

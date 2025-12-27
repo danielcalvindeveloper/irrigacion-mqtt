@@ -10,6 +10,9 @@
 // Gestiona el estado de hasta 8 relés (zonas de riego) con temporizadores
 // automáticos que apagan los relés al finalizar el tiempo configurado.
 
+// Forward declaration para callback
+typedef void (*ZoneStateChangedCallback)(int zona, bool estado);
+
 class RelayController {
 private:
     // Estado de cada zona (true = activa, false = inactiva)
@@ -20,6 +23,9 @@ private:
     
     // Último update de timers
     unsigned long lastUpdate;
+    
+    // Callback para notificar cambios de estado
+    ZoneStateChangedCallback stateChangedCallback;
 
 public:
     // Constructor
@@ -48,6 +54,9 @@ public:
     
     // Validar número de zona (1-8)
     bool isValidZone(int zona);
+    
+    // Registrar callback para cambios de estado
+    void setStateChangedCallback(ZoneStateChangedCallback callback);
 };
 
 #endif // RELAY_CONTROLLER_H

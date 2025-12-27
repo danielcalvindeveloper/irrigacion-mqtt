@@ -1,7 +1,7 @@
-# 🎯 Desarrollo ESP32 - Índice de Documentación
+# 🎯 Desarrollo ESP8266 - Índice de Documentación
 
-> **Última actualización**: 2025-12-16  
-> **Estado**: Documentación completa - Listo para desarrollo
+> **Última actualización**: 2025-12-27  
+> **Estado**: Documentación actualizada - Hardware ESP8266 con Display OLED
 
 ---
 
@@ -12,7 +12,7 @@
 
 **Contenido**:
 - Introducción y objetivos del firmware
-- Hardware requerido (ESP32, relés, sensores, electroválvulas)
+- Hardware requerido (ESP8266, relés 4CH, sensor, display OLED)
 - Mapeo completo de pines GPIO
 - Arquitectura del firmware por módulos
 - Configuración del entorno (PlatformIO y Arduino IDE)
@@ -30,8 +30,9 @@
 
 **Contenido**:
 - Especificaciones técnicas de cada componente
-- Mapeo de pines ESP32 → Relés → Electroválvulas
-- Conexiones de sensores de humedad
+- Mapeo de pines ESP8266 → Relés → Electroválvulas
+- Conexiones de sensor de humedad (A0)
+- Conexiones del display OLED I2C (D7/D3)
 - Esquema de alimentación eléctrica
 - Diagrama ASCII del sistema completo
 - Verificación paso a paso de conexiones
@@ -55,7 +56,8 @@
 - Sincronización de agendas
 - Ejecución automática de agendas
 - Gestión de relés con timers
-- Lectura y publicación de sensores
+- Lectura y publicación de sensor
+- Actualización del display OLED
 - Modo offline y reconexión
 - Diagramas de secuencia (comando manual, sync de agenda)
 
@@ -99,7 +101,14 @@ firmware/
 - ✅ Estructura completa del proyecto
 - ✅ Headers principales implementados
 - ✅ main.cpp con máquina de estados
-- ⏳ Implementación de módulos (pendiente)
+- ✅ WiFiManager implementado
+- ✅ TimeSync implementado
+- ✅ MqttManager implementado
+- ✅ RelayController implementado (4 zonas)
+- ⌚ HumiditySensor (bloqueado - sensor no conectado)
+- ✅ SPIFFSManager implementado (LittleFS)
+- ✅ AgendaManager implementado
+- ✅ DisplayManager implementado (OLED SSD1306)
 
 **Cuándo usar**: Para comenzar a codificar
 
@@ -115,9 +124,10 @@ firmware/
 ### Fase 2: Setup Hardware (2-4 horas)
 1. ✅ Armar circuito en protoboard siguiendo [`esp32-diagramas-conexion.json`](./esp32-diagramas-conexion.json)
 2. ✅ Verificar conexiones con multímetro
-3. ✅ Probar ESP32 con sketch básico (Blink)
-4. ✅ Probar activación individual de cada relé
-5. ✅ Calibrar sensores de humedad
+3. ✅ Probar ESP8266 con sketch básico (Blink)
+4. ✅ Probar activación individual de cada relé (4 zonas)
+5. ✅ Probar display OLED con sketch de ejemplo
+6. ⏳ Calibrar sensor de humedad (cuando se conecte)
 
 ### Fase 3: Setup Software (1 hora)
 1. ✅ Instalar PlatformIO o Arduino IDE
@@ -133,53 +143,60 @@ Orden sugerido de implementación:
 1. **Logger** (30 min) ✅ Ya incluido
    - Sistema de logs funcional
 
-2. **RelayController** (2-3 horas)
+2. **RelayController** (2-3 horas) ✅ Completado
    - Implementar `.cpp` según `.h`
    - Test: Encender/apagar zonas manualmente
    - Test: Verificar timers automáticos
 
-3. **HumiditySensor** (2-3 horas)
-   - Implementar lectura ADC
-   - Calibración y mapeo a porcentaje
-   - Test: Leer sensores en loop
+3. **DisplayManager** (3-4 horas) ✅ Completado
+   - Inicialización OLED SSD1306
+   - Renderizado de iconos WiFi/MQTT
+   - Indicadores de 4 zonas
+   - Actualización cada 2 segundos
 
-4. **WiFiManager** (3-4 horas)
+4. **HumiditySensor** (2-3 horas) ⏳ Pendiente (hardware)
+   - Implementar lectura ADC en A0
+   - Calibración y mapeo a porcentaje
+   - Test: Leer sensor en loop
+
+5. **WiFiManager** (3-4 horas) ✅ Completado
    - Conexión WiFi con reconexión
    - Test: Verificar reconexión al desconectar router
 
-5. **TimeSync** (1-2 horas)
+6. **TimeSync** (1-2 horas) ✅ Completado
    - Sincronización NTP
    - Test: Verificar hora correcta en serial
 
-6. **MqttManager** (4-5 horas)
+7. **MqttManager** (4-5 horas) ✅ Completado
    - Cliente MQTT básico
    - Suscripción a topics de comandos
    - Publicación de estado
    - Test: Enviar comando desde backend
 
-7. **Agenda y AgendaManager** (3-4 horas)
+8. **Agenda y AgendaManager** (3-4 horas) ✅ Completado
    - Modelo de datos
-   - Ejecución temporal
+   - Ejecución temporal cada 10 segundos
    - Test: Crear agenda manual y verificar ejecución
 
-8. **SPIFFSManager** (3-4 horas)
+9. **SPIFFSManager** (3-4 horas) ✅ Completado (LittleFS)
    - Persistencia JSON de agendas
    - Cargar al inicio
-   - Test: Guardar, resetear ESP32, verificar carga
+   - Test: Guardar, resetear ESP8266, verificar carga
 
-9. **Integración MQTT + Agendas** (2-3 horas)
-   - Recibir sincronización de agendas
-   - Guardar en SPIFFS
-   - Test: Crear agenda desde backend y verificar ejecución
+10. **Integración MQTT + Agendas** (2-3 horas) ✅ Completado
+    - Recibir sincronización de agendas
+    - Guardar en LittleFS
+    - Test: Crear agenda desde backend y verificar ejecución
 
 ### Fase 5: Testing End-to-End (3-5 días)
 1. ✅ Levantar stack Docker del backend
-2. ✅ Conectar ESP32 con firmware completo
+2. ✅ Conectar ESP8266 con firmware completo
 3. ✅ Crear agendas desde frontend
-4. ✅ Verificar ejecución automática
+4. ✅ Verificar ejecución automática cada 10 segundos
 5. ✅ Probar comandos manuales
-6. ✅ Simular desconexión WiFi (modo offline)
-7. ✅ Verificar reconexión y sincronización
+6. ✅ Verificar display OLED mostrando estado
+7. ✅ Simular desconexión WiFi (modo offline)
+8. ✅ Verificar reconexión y sincronización
 
 ### Fase 6: Instalación Final (1-2 días)
 1. ✅ Diseñar PCB custom (opcional) o soldar protoboard
@@ -210,10 +227,10 @@ Orden sugerido de implementación:
 
 ## 📖 Referencias Externas
 
-### ESP32
-- [Documentación oficial Espressif](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/)
-- [Random Nerd Tutorials - ESP32](https://randomnerdtutorials.com/projects-esp32/)
-- [ESP32 Pinout Reference](https://randomnerdtutorials.com/esp32-pinout-reference-gpios/)
+### ESP8266
+- [Documentación oficial ESP8266](https://arduino-esp8266.readthedocs.io/)
+- [Random Nerd Tutorials - ESP8266](https://randomnerdtutorials.com/projects-esp8266/)
+- [ESP8266 Pinout Reference](https://randomnerdtutorials.com/esp8266-pinout-reference-gpios/)
 
 ### Arduino/PlatformIO
 - [PlatformIO Docs](https://docs.platformio.org/)
@@ -277,22 +294,24 @@ Sí, configurar `MQTT_TLS = true` en `Secrets.h`. Requiere certificados.
 ## ✅ Checklist de Implementación
 
 ### Hardware
-- [ ] ESP32 NodeMCU adquirido y funcionando
-- [ ] Módulo de relés 8CH conectado
-- [ ] 6 sensores de humedad calibrados
-- [ ] Fuente 5V 3A instalada
-- [ ] 8 electroválvulas conectadas (o según zonas usadas)
+- [ ] ESP8266 NodeMCU adquirido y funcionando
+- [x] Módulo de relés 4CH conectado
+- [ ] Sensor de humedad calibrado (pendiente conexión)
+- [x] Display OLED SSD1306 I2C funcionando
+- [x] Fuente 5V 2A instalada
+- [ ] 4 electroválvulas conectadas (o según zonas usadas)
 - [ ] Montaje en caja estanca (para instalación final)
 
 ### Software
-- [ ] PlatformIO/Arduino IDE instalado
-- [ ] Firmware compila sin errores
-- [ ] Secrets.h configurado con credenciales
-- [ ] WiFiManager conecta exitosamente
-- [ ] MQTT publica/suscribe correctamente
-- [ ] Agendas se ejecutan automáticamente
-- [ ] Modo offline funciona (reconexión automática)
-- [ ] SPIFFS guarda/carga agendas
+- [x] PlatformIO/Arduino IDE instalado
+- [x] Firmware compila sin errores
+- [x] Secrets.h configurado con credenciales
+- [x] WiFiManager conecta exitosamente
+- [x] MQTT publica/suscribe correctamente
+- [x] Display OLED muestra información
+- [x] Agendas se ejecutan automáticamente (cada 10s)
+- [x] Modo offline funciona (reconexión automática)
+- [x] LittleFS guarda/carga agendas
 
 ### Testing
 - [ ] Comando manual ON/OFF funciona

@@ -1,6 +1,6 @@
-# Firmware ESP32 - Sistema de Riego MQTT
+# Firmware ESP8266 - Sistema de Riego MQTT
 
-Firmware para ESP32 NodeMCU que controla hasta 8 zonas de riego mediante MQTT.
+Firmware para ESP8266 NodeMCU que controla 4 zonas de riego mediante MQTT, con display OLED para monitoreo visual en tiempo real.
 
 ## 🚀 Quick Start
 
@@ -75,22 +75,24 @@ firmware/
 Ver documentación detallada en [../../docs/implementacion/esp32-desarrollo.md](../../docs/implementacion/esp32-desarrollo.md)
 
 ### Pines de Relés (Activo BAJO)
-- GPIO4  → Zona 1
-- GPIO5  → Zona 2
-- GPIO13 → Zona 3
-- GPIO14 → Zona 4
-- GPIO15 → Zona 5
-- GPIO16 → Zona 6
-- GPIO17 → Zona 7
-- GPIO18 → Zona 8
+- GPIO5 (D1)  → Zona 1
+- GPIO4 (D2)  → Zona 2
+- GPIO14 (D5) → Zona 3
+- GPIO12 (D6) → Zona 4
 
-### Pines de Sensores ADC
-- GPIO32 → Sensor Zona 1
-- GPIO33 → Sensor Zona 2
-- GPIO34 → Sensor Zona 3
-- GPIO35 → Sensor Zona 4
-- GPIO36 → Sensor Zona 5
-- GPIO39 → Sensor Zona 6
+### Pin de Sensor ADC
+- A0 (GPIO17) → Sensor de humedad único
+  - Nota: Expansión a más sensores requiere multiplexor externo (ej: CD4051)
+
+### Pines de Display OLED I2C ⭐ NUEVO
+- GPIO13 (D7) → SDA (datos I2C)
+- GPIO0 (D3)  → SCL (clock I2C)
+- Dirección I2C: 0x3C
+- Resolución: 128x64 píxeles monocromático
+- Layout de pantalla:
+  - **Esquinas superiores**: Iconos WiFi (señal) y MQTT (conexión)
+  - **Centro**: 4 indicadores de zona (relleno=ON, contorno=OFF)
+  - **Línea inferior**: Mensajes de estado del sistema
 
 ## 📡 Topics MQTT
 
@@ -199,15 +201,20 @@ Ver `Secrets.h.example` para configuración de credenciales HTTP.
 
 - [x] Estructura del proyecto
 - [x] Configuración PlatformIO
-- [ ] WiFiManager (en desarrollo)
-- [ ] MqttManager (en desarrollo)
-- [ ] RelayController (en desarrollo)
-- [ ] HumiditySensor (en desarrollo)
-- [ ] AgendaManager (en desarrollo)
-- [ ] SPIFFSManager (en desarrollo)
-- [ ] TimeSync (en desarrollo)
+- [x] WiFiManager ✅ Completado
+- [x] TimeSync ✅ Completado  
+- [x] MqttManager ✅ Completado (buffer 1024 bytes)
+- [x] RelayController ✅ Completado
+- [x] SPIFFSManager ✅ Completado (LittleFS)
+- [x] AgendaManager ✅ Completado
+- [x] DisplayManager ✅ Completado (OLED SSD1306) ⭐ NUEVO
+- [ ] HumiditySensor ⏳ Bloqueado (hardware no disponible)
 - [ ] Tests unitarios (pendiente)
 - [ ] OTA updates (pendiente)
+
+**Recursos actuales:**
+- Flash: 36.1% usado (376911/1044464 bytes)
+- RAM: 45.5% usado (37268/81920 bytes)
 
 ## 🤝 Contribuir
 

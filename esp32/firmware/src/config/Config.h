@@ -5,32 +5,34 @@
 // CONFIGURACIÓN GENERAL DEL SISTEMA DE RIEGO ESP32
 // ============================================================================
 
-// ============= Hardware Config =============
-#define MAX_ZONES 8
-#define MAX_SENSORS 6  // Solo 6 pines ADC disponibles para sensores
-#define LED_PIN 2      // LED integrado en ESP32
+
+// ============= Hardware Config para NodeMCU ESP8266 =============
+#define MAX_ZONES 4
+#define MAX_SENSORS 1  // Solo 1 pin ADC disponible (A0)
+#define LED_PIN 2      // LED integrado en NodeMCU (GPIO2)
 
 // Pines de relés (OUTPUT - Lógica invertida: LOW=ON, HIGH=OFF)
-const int RELAY_PINS[MAX_ZONES] = {
-    4,   // Zona 1
-    5,   // Zona 2
-    13,  // Zona 3
-    14,  // Zona 4
-    15,  // Zona 5
-    16,  // Zona 6
-    17,  // Zona 7
-    18   // Zona 8
+// D1=GPIO5, D2=GPIO4, D5=GPIO14, D6=GPIO12
+static const int RELAY_PINS[MAX_ZONES] = {
+    5,   // D1 - Zona 1
+    4,   // D2 - Zona 2
+    14,  // D5 - Zona 3
+    12   // D6 - Zona 4
 };
 
-// Pines de sensores de humedad (INPUT - ADC 12-bit)
-const int SENSOR_PINS[MAX_SENSORS] = {
-    32,  // Sensor Zona 1
-    33,  // Sensor Zona 2
-    34,  // Sensor Zona 3 (INPUT_ONLY)
-    35,  // Sensor Zona 4 (INPUT_ONLY)
-    36,  // Sensor Zona 5 (INPUT_ONLY)
-    39   // Sensor Zona 6 (INPUT_ONLY)
+// Pines de sensores de humedad (INPUT - ADC 10-bit)
+// Solo A0 disponible en ESP8266
+static const int SENSOR_PINS[MAX_SENSORS] = {
+    A0   // Sensor único conectado a A0
+    // Para más sensores, se requiere multiplexor externo
 };
+
+// Pines I2C para pantalla OLED
+#define I2C_SDA 13  // D7 (GPIO13)
+#define I2C_SCL 0   // D3 (GPIO0)
+#define OLED_ADDRESS 0x3C  // Dirección 7-bit (0x78 >> 1)
+#define OLED_WIDTH 128
+#define OLED_HEIGHT 64
 
 // Calibración de sensores de humedad
 // ⚠️ IMPORTANTE: Calibrar cada sensor individualmente
@@ -105,7 +107,7 @@ enum SystemState {
 };
 
 // Nombres de estados para logs
-const char* STATE_NAMES[] = {
+static const char* STATE_NAMES[] = {
     "INIT",
     "WIFI_CONNECTING",
     "WIFI_CONNECTED",
@@ -116,7 +118,7 @@ const char* STATE_NAMES[] = {
 
 // ============= Días de la Semana =============
 // Mapeo para agendas
-const char* DIAS_SEMANA[] = {
+static const char* DIAS_SEMANA[] = {
     "LUN", "MAR", "MIE", "JUE", "VIE", "SAB", "DOM"
 };
 

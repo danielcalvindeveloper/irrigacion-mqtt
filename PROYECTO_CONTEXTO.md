@@ -2,16 +2,17 @@
 
 > **Propósito**: Este documento centraliza el estado completo del proyecto (arquitectura, implementación, decisiones) para mantener contexto consistente durante el desarrollo.
 > 
-> **Última actualización**: 2025-12-15 (Refactoring de packages completado - Sistema operativo con autenticación)
+> **Última actualización**: 2025-12-27 (Firmware ESP8266 completo - Display OLED integrado - Sistema 100% operacional)
 
 ---
 
 ## 📌 Stack Tecnológico
 
 ### Hardware
-- **ESP32 NodeMCU** (CP2102) - Nodo de riego con WiFi
-- **Relés 4CH TTL** - Control de hasta 8 zonas de riego
-- **Sensor capacitivo de humedad** (v2.0) - Monitoreo de suelo
+- **ESP8266 NodeMCU** (CP2102) - Nodo de riego con WiFi (80MHz, 4MB Flash, 80KB RAM)
+- **Relés 4CH TTL** - Control de 4 zonas de riego (lógica invertida)
+- **Display OLED SSD1306** - Pantalla I2C 128x64px para monitoreo visual
+- **Sensor capacitivo de humedad** (v2.0) - Monitoreo de suelo (1 sensor en A0, expansión futura requiere multiplexor)
 
 ### Backend
 - **Java 17+** con Spring Boot 3.4.0
@@ -576,7 +577,44 @@ Simplifica queries y validación. Alternativa (tabla relacional) sería over-eng
 ---
 
 ## � Historial de Cambios Importantes
+### 2025-12-27: Firmware ESP8266 - Sistema Completo Operacional ⭐
+**Firmware 100% funcional:**
+1. ✅ **WiFiManager** - Conexión WiFi con auto-reconexión
+2. ✅ **TimeSync** - Sincronización NTP (GMT-3 Argentina)
+3. ✅ **MqttManager** - Cliente MQTT con buffer 1024 bytes para agendas
+4. ✅ **RelayController** - Control de 4 relés con timers auto-shutoff
+5. ⏳ **HumiditySensor** - BLOQUEADO (hardware no disponible)
+6. ✅ **SPIFFSManager** - Persistencia de agendas en LittleFS
+7. ✅ **AgendaManager** - Ejecución automática de agendas programadas
+8. ✅ **DisplayManager** - Pantalla OLED con estado completo del sistema ⭐ NUEVO
 
+**Display OLED - Características:**
+- Iconos WiFi (señal RSSI) y MQTT (conexión) en esquinas superiores
+- 4 indicadores de zona en centro (relleno=ON, contorno=OFF)
+- Línea de estado inferior con mensajes del sistema
+- Actualización cada 2 segundos
+- Conectado en D7 (SDA) y D3 (SCL)
+
+**Integración verificada:**
+- ✅ Comunicación MQTT bidireccional Backend ↔ ESP8266
+- ✅ Frontend recibiendo actualizaciones en tiempo real
+- ✅ Timers funcionando correctamente con auto-apagado
+- ✅ Sincronización de agendas vía MQTT funcionando
+- ✅ Ejecución automática de riego según horario programado
+- ✅ Display mostrando información completa en tiempo real
+- ✅ Modo offline con agendas locales en SPIFFS
+
+**Configuración actual:**
+- Placa: NodeMCU ESP8266 (CP2102), 80MHz, 4MB Flash, 80KB RAM
+- Broker MQTT: 192.168.10.108:1883
+- Backend HTTP: 192.168.10.108:8080 (admin:dev123)
+- Node ID: `550e8400-e29b-41d4-a716-446655440000`
+- Zonas: 4 relés en GPIO5 (D1), GPIO4 (D2), GPIO14 (D5), GPIO12 (D6)
+- Display: OLED I2C 128x64 en GPIO13 (D7) SDA, GPIO0 (D3) SCL
+- Sensores: 1 ADC (A0) - pendiente de implementar
+- Recursos: Flash 36.1% (376911 bytes), RAM 45.5% (37268 bytes)
+
+Ver detalles en `docs/bitacora-cambios.md`
 ### 2025-12-15: Refactoring de Packages y Autenticación
 **Cambios realizados:**
 1. **Refactoring de packages completado**

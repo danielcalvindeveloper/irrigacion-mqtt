@@ -72,7 +72,9 @@ export const enviarComando = (nodeId, zona, accion, duracion = null) => {
  * @returns {Promise}
  */
 export const iniciarRiegoManual = (nodeId, zona, duracionMinutos) => {
-  return enviarComando(nodeId, zona, 'ON', duracionMinutos * 60) // Convertir a segundos
+  const duracionSegundos = duracionMinutos * 60
+  console.log('🔍 iniciarRiegoManual - zona:', zona, 'minutos:', duracionMinutos, '→ segundos:', duracionSegundos)
+  return enviarComando(nodeId, zona, 'ON', duracionSegundos) // Convertir a segundos
 }
 
 /**

@@ -115,11 +115,12 @@
               <v-text-field
                 v-model="manualDuration"
                 type="number"
-                style="width: 80px"
+                style="width: 120px"
                 density="compact"
                 suffix="min"
                 hide-details
                 variant="outlined"
+                class="text-center"
               ></v-text-field>
             </template>
           </v-slider>
