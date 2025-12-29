@@ -2,6 +2,223 @@
 
 Este documento registra todos los cambios relevantes realizados en el firmware, hardware y documentación del proyecto. Debe mantenerse actualizado en cada sesión de trabajo.
 
+## 2025-12-28
+
+### Feature: Sistema Completo de Historial de Eventos de Riego
+
+**Objetivo:**
+- Implementar tracking preciso de cada ejecución de riego (agenda y manual)
+- Registrar inicio/fin con timestamps, duraciones reales y origen
+- Proveer API REST para consultar historial
+- Base para analytics y detección de anomalías
+
+**Problema Anterior:**
+- Tabla `riego_evento` existía en BD pero no se usaba
+- No había forma de saber qué riegos realmente se ejecutaron
+- El historial se debería inferir desde las agendas (datos no reales)
+- Sin trazabilidad de duraciones reales vs programadas
+
+**Implementación:**
+
+**Backend - 6 Clases Nuevas:**
+
+1. **RiegoEvento.java** (Model/Entity)
+   - Mapea tabla `riego_evento` con JPA
+   - Campos: id, nodeId, zona, timestamp, duracionSeg, origen, versionAgenda, raw, createdAt
+   - Origen: "agenda" | "manual"
+   - VersionAgenda: nullable (null si manual)
+
+2. **RiegoEventoRepository.java** (Repository)
+   - `findByNodeIdOrderByTimestampDesc()`: Paginado por nodo
+   - `findByNodeIdAndTimestampBetweenOrderByTimestampDesc()`: Por rango fechas
+   - `findByNodeIdAndZonaOrderByTimestampDesc()`: Filtro por zona
+
+3. **RiegoEventoResponse.java** (DTO)
+   - Respuesta API sin campo `raw` (JSON limpio)
+   - Campos: id, zona, timestamp, duracionSeg, origen, versionAgenda
+
+4. **RiegoEventoService.java** (Service)
+   - `procesarEvento(nodeId, payload)`: Parsea JSON MQTT
+   - Solo persiste eventos tipo "fin" (con duración real)
+   - Eventos "inicio" se loggean pero no persisten
+   - Guarda payload raw en campo JSONB
+
+5. **MqttEventoSubscriber.java** (Service)
+   - Se auto-registra al arrancar en topic `riego/+/evento`
+   - Extrae nodeId del topic pattern
+   - Usa Mqtt5BlockingClient (igual que resto del sistema)
+   - Thread separado para no bloquear startup
+
+6. **RiegoEventoController.java** (Controller)
+   - `GET /api/nodos/{nodeId}/historial?limit=50`: Últimos N eventos
+   - `GET /api/nodos/{nodeId}/historial/zona/{zona}`: Filtro por zona
+   - Default limit=50, configurable
+
+**ESP32/ESP8266 - 6 Archivos Modificados:**
+
+1. **MqttManager.h/cpp**
+   - Nuevo método: `publishRiegoEvento(zona, evento, origen, duracion, versionAgenda)`
+   - Topic: `riego/{nodeId}/evento`
+   - Payload JSON con evento "inicio" o "fin"
+
+2. **RelayController.h/cpp**
+   - Nuevos campos: `zoneDuracionProgramada[]`, `zoneOrigen[]`, `zoneVersionAgenda[]`
+   - Nuevo callback: `RiegoEventCallback`
+   - `turnOn()` modificado: acepta parámetros origen y versionAgenda
+   - `turnOn()`: Publica evento "inicio" al activar relay
+   - `turnOff()`: Calcula duración real, publica evento "fin"
+   - `loop()`: Publica evento "fin" cuando timer expira automáticamente
+
+3. **AgendaManager.cpp**
+   - Extrae campo `version` del JSON de agendas
+   - Pasa origen="agenda" y versión al llamar `turnOn()`
+
+4. **main.cpp**
+   - Nuevo callback: `onRiegoEvent(zona, evento, origen, duracion, versionAgenda)`
+   - Conecta callback en setup: `relayController.setRiegoEventCallback(onRiegoEvent)`
+   - Publica eventos via `mqttManager.publishRiegoEvento()`
+
+**Protocolo MQTT Extendido:**
+
+Nuevo topic: `riego/{nodeId}/evento`
+
+Evento inicio:
+```json
+{
+  "zona": 1,
+  "evento": "inicio",
+  "timestamp": 1735415280,
+  "origen": "agenda",
+  "duracionProgramada": 600,
+  "versionAgenda": 7
+}
+```
+
+Evento fin:
+```json
+{
+  "zona": 1,
+  "evento": "fin",
+  "timestamp": 1735415880,
+  "origen": "manual",
+  "duracionReal": 598,
+  "versionAgenda": null
+}
+```
+
+**Flujo Completo:**
+
+1. **Riego manual:**
+   - Backend → MQTT cmd → ESP8266
+   - ESP8266: `turnOn(zona, 600, "manual", 0)`
+   - ESP8266 → MQTT evento "inicio"
+   - Backend: recibe inicio (log, no persiste)
+   - Tras 600s: ESP8266 → MQTT evento "fin"
+   - Backend: persiste en `riego_evento`
+
+2. **Riego automático (agenda):**
+   - AgendaManager detecta hora programada
+   - ESP8266: `turnOn(zona, 600, "agenda", 7)`
+   - ESP8266 → MQTT evento "inicio" con versionAgenda
+   - Tras 600s: ESP8266 → MQTT evento "fin" con duracionReal
+   - Backend: persiste con origen="agenda" y version_agenda=7
+
+**Archivos Modificados:**
+- `backend/src/main/java/ar/net/dac/iot/irrigacion/model/RiegoEvento.java` (nuevo)
+- `backend/src/main/java/ar/net/dac/iot/irrigacion/repository/RiegoEventoRepository.java` (nuevo)
+- `backend/src/main/java/ar/net/dac/iot/irrigacion/dto/RiegoEventoResponse.java` (nuevo)
+- `backend/src/main/java/ar/net/dac/iot/irrigacion/service/RiegoEventoService.java` (nuevo)
+- `backend/src/main/java/ar/net/dac/iot/irrigacion/service/MqttEventoSubscriber.java` (nuevo)
+- `backend/src/main/java/ar/net/dac/iot/irrigacion/controller/RiegoEventoController.java` (nuevo)
+- `esp32/firmware/src/network/MqttManager.h` (modificado)
+- `esp32/firmware/src/network/MqttManager.cpp` (modificado)
+- `esp32/firmware/src/hardware/RelayController.h` (modificado)
+- `esp32/firmware/src/hardware/RelayController.cpp` (modificado)
+- `esp32/firmware/src/scheduler/AgendaManager.cpp` (modificado)
+- `esp32/firmware/src/main.cpp` (modificado)
+- `docs/implementacion/contratos-mqtt-http.md` (actualizado)
+- `docs/implementacion/historial-eventos-riego.md` (nuevo - documentación completa)
+
+**Testing:**
+```bash
+# Backend
+mvn clean compile  # ✅ Compilado exitosamente
+
+# ESP8266
+cd esp32/firmware
+pio run            # ✅ Compilado exitosamente (379 KB Flash, 46% RAM)
+pio run --target upload  # ✅ Cargado en hardware
+
+# Desplegar
+docker-compose up -d --build backend
+
+# Verificar suscripción MQTT en logs
+docker logs irrigacion-backend | grep "Suscrito a topic MQTT de eventos"
+
+# Probar endpoint
+curl -u admin:dev123 "http://localhost:8080/api/nodos/{nodeId}/historial"
+```
+
+**Próximos Pasos:**
+- Testing end-to-end con riegos manuales
+- Testing con agendas programadas
+- Frontend: Pantalla de historial con gráficos
+- Analytics: Consumo total por zona/mes
+- Alertas: Desvíos entre duraciones programadas vs reales
+
+---
+
+### Bugfix: Cálculo Incorrecto de Próximo Riego (Mejora Algoritmo)
+
+**Problema:**
+- El cálculo de "próximo riego" no elegía correctamente la agenda más cercana en el tiempo
+- Ejemplo: Con agenda A (sábado 17:13 ya pasada → próximo sábado en 7 días) y agenda B (domingo 17:15 → mañana), elegía incorrectamente A en lugar de B
+- La lógica comparaba solo días adelante y hora, pero no el tiempo absoluto total
+
+**Causa:**
+- El método `calcularProximoRiego()` comparaba `diasAdelante` y hora por separado
+- No calculaba el tiempo absoluto en minutos hasta cada ejecución
+- Al comparar agendas en días distintos, no determinaba cuál estaba más cerca temporalmente
+
+**Solución:**
+- Refactorizado el algoritmo para calcular minutos absolutos hasta cada agenda:
+  - Para hoy: `Duration.between(ahora, horaAgenda).toMinutes()`
+  - Para días futuros: `(días × 24 × 60) - minutosQueYaPasaronHoy + minutosDesdeMedianocheHastaAgenda`
+- Ahora compara `minutosMinimos` y selecciona la agenda con menor tiempo de espera
+- Garantiza que siempre se elige la ejecución MÁS CERCANA en tiempo absoluto
+
+**Archivos Modificados:**
+- `backend/src/main/java/ar/net/dac/iot/irrigacion/service/ZoneStatusService.java` (método `calcularProximoRiego`)
+- `backend/src/test/java/ar/net/dac/iot/irrigacion/service/ZoneStatusServiceTest.java` (nuevo archivo con tests unitarios)
+
+**Tests Creados:**
+- `testCalcularProximoRiego_sinAgendas`: Verifica retorno null cuando no hay agendas
+- `testCalcularProximoRiego_agendaHoyFutura`: Agenda para hoy que no ha pasado
+- `testCalcularProximoRiego_agendaHoyPasada`: Agenda de hoy ya pasada → debe buscar próxima semana
+- `testCalcularProximoRiego_multipleAgendasEligeMasCercana`: 3 agendas en diferentes días → elige la de mañana
+- `testCalcularProximoRiego_mismoDiaDiferentesHoras`: 2 agendas el mismo día → elige la más temprana
+- `testCalcularProximoRiego_agendaTodosLosDias`: Agenda diaria → debe ser hoy o mañana según hora actual
+- `testCalcularProximoRiego_agendaSoloUnDiaRemoto`: Agenda en el día 7 (límite del algoritmo)
+
+**Prueba:**
+```bash
+# Ejecutar tests
+cd backend
+mvn test -Dtest=ZoneStatusServiceTest
+
+# Rebuild backend
+docker-compose up -d --build backend
+
+# Probar API con curl
+curl -u admin:dv123 "http://localhost:8080/api/nodos/{nodeId}/status" | jq '.[] | {zona, nombre, proximoRiego}'
+```
+
+**Resultado Esperado:**
+- Todas las zonas con múltiples agendas deben mostrar la ejecución MÁS CERCANA
+- Frontend debe reflejar correctamente los tiempos de próximo riego
+
+---
+
 ## 2025-12-27 (Sesión Tarde)
 
 ### Bugfix: Frontend No Muestra "Próximo Riego" Correctamente
@@ -193,6 +410,38 @@ Este documento registra todos los cambios relevantes realizados en el firmware, 
 - [ ] Optimizar consumo de memoria si es necesario
 - [ ] Implementar OTA (Over-The-Air updates)
 - [ ] Documentar procedimientos de instalación final
+
+---
+
+### Hotfix: Parsing de agendas en firmware (NoMemory) — 2025-12-28
+
+**Resumen:**
+- Se detectó error `NoMemory` en el ESP8266 al parsear el JSON de agendas cuando el payload HTTP/ MQTT era ~1KB o mayor.
+- Resultado: agendas no se ejecutaban y el dispositivo registraba `Error parseando agendas: NoMemory`.
+
+**Causa raíz:**
+- `AgendaManager` usaba `StaticJsonDocument<1024>` que no era suficiente para el JSON real almacenado (~1.07 KB más overhead de ArduinoJson).
+
+**Acción tomada:**
+- En el firmware se sustituyó el `StaticJsonDocument<1024>` por `DynamicJsonDocument jsonContent.length() + 1024` en `esp32/firmware/src/scheduler/AgendaManager.cpp`.
+- Se limpió además el mensaje retenido en el topic MQTT `riego/{nodeId}/agenda/sync` (broker HiveMQ en el entorno local) para evitar reentregas antiguas.
+
+**Archivos afectados:**
+- `esp32/firmware/src/scheduler/AgendaManager.cpp` (parche: uso de DynamicJsonDocument)
+- `esp32/firmware/src/main.cpp` (comportamiento existente: `fetchAndStoreAgendas()` envuelve array HTTP en objeto `{"agendas": ...}` )
+
+**Impacto:**
+- Dispositivo volvió a cargar y ejecutar agendas correctamente; verificado en logs y display.
+- No se modificó el backend ni los endpoints HTTP.
+
+**Recomendaciones:**
+- Para cargas mayores o crecimiento de agendas, implementar parsing por-objeto o paginación en backend.
+- Mantener prácticas de broker: evitar retained con payloads grandes o limpiarlos cuando se actualizan formatos.
+
+**Rollback:**
+- Revertir cambio en firmware restaurando `StaticJsonDocument` si es necesario, pero esto reintroducirá el problema.
+
+**Hecho por:** [registro de cambios automatizado por herramienta de integración]
 
 ## Notas
 - Mantener la compatibilidad con todo el código y hardware existente

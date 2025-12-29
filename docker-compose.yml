@@ -43,6 +43,7 @@ services:
       APP_MQTT_TLS: ${APP_MQTT_TLS}
       APP_SECURITY_USERNAME: ${APP_SECURITY_USERNAME}
       APP_SECURITY_PASSWORD: ${APP_SECURITY_PASSWORD}
+      TZ: ${TZ}
     ports:
       - "8080:8080"
     depends_on:

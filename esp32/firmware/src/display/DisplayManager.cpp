@@ -13,6 +13,8 @@ DisplayManager::DisplayManager() {
     lastWifiRssi = -100;
     lastWifiConnected = false;
     lastMqttConnected = false;
+    lastDateTimeToggle = 0;
+    showingDate = true;
 }
 
 DisplayManager::~DisplayManager() {
@@ -242,6 +244,49 @@ void DisplayManager::updateStatusIcons(int wifiRssi, bool wifiConnected, bool mq
     
     drawWiFiIcon(wifiRssi, wifiConnected);
     drawMqttIcon(mqttConnected);
+}
+
+// ============================================================================
+// Fecha y hora en centro superior
+// ============================================================================
+void DisplayManager::updateDateTimeDisplay(int dayOfWeek, int dayOfMonth, int hour, int minute) {
+    if (!initialized) return;
+    
+    unsigned long now = millis();
+    
+    // Alternar cada 5 segundos
+    if (now - lastDateTimeToggle >= 5000) {
+        lastDateTimeToggle = now;
+        showingDate = !showingDate;
+    }
+    
+    // Limpiar área central superior (entre los iconos)
+    // Iconos WiFi (izq): x=0-15, MQTT (der): x=113-128
+    // Área disponible: x=20 a x=108 (88 píxeles de ancho)
+    oledDisplay->fillRect(20, 0, 88, 10, SSD1306_BLACK);
+    
+    char buffer[12];
+    
+    if (showingDate) {
+        // Mostrar día de la semana (3 letras) + número de día
+        const char* dias[] = {"DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SAB"};
+        snprintf(buffer, sizeof(buffer), "%s %02d", dias[dayOfWeek % 7], dayOfMonth);
+    } else {
+        // Mostrar hora:minuto
+        snprintf(buffer, sizeof(buffer), "%02d:%02d", hour, minute);
+    }
+    
+    // Centrar el texto en el área disponible
+    oledDisplay->setTextSize(1);
+    int16_t x1, y1;
+    uint16_t w, h;
+    oledDisplay->getTextBounds(buffer, 0, 0, &x1, &y1, &w, &h);
+    
+    // Calcular posición centrada en el área entre iconos
+    int x = 20 + (88 - w) / 2;  // Centro del área disponible
+    
+    oledDisplay->setCursor(x, 1);
+    oledDisplay->print(buffer);
 }
 
 // ============================================================================

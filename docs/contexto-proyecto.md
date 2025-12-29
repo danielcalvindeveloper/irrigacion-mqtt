@@ -33,7 +33,13 @@ Este documento debe leerse al inicio de cada sesión de trabajo. Resume el estad
 
 ### Documentación y Diagramas
 - Todos los diagramas, contratos y especificaciones en docs/ y docs/implementacion/ deben respetarse y mantenerse actualizados.
-- Cualquier cambio mayor debe reflejarse en los diagramas y documentación correspondiente.
+
+- Nota (2025-12-28): compatibilidad de formato de agendas
+	- Se detectó una inconsistencia práctica entre el endpoint HTTP `GET /api/nodos/{nodeId}/agendas` (devuelve un array JSON) y el formato MQTT `riego/{nodeId}/agenda/sync` (objeto con campo `agendas`).
+	- Para mantener la compatibilidad sin tocar el backend, el firmware añade temporalmente un envoltorio al payload HTTP y se actualizó el parser en `AgendaManager` para evitar errores por memoria.
+	- Recomendación: documentar y acordar el contrato definitivo en `docs/implementacion/contratos-mqtt-http.md` y evaluar paginación o reducción de payloads para dispositivos con recursos limitados.
+
+	- Cualquier cambio mayor debe reflejarse en los diagramas y documentación correspondiente.
 
 ## Lineamientos
 - Mantener compatibilidad con todo el código, hardware, diagramas y documentación existente.

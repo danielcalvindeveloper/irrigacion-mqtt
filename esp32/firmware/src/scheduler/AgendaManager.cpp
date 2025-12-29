@@ -81,8 +81,8 @@ void AgendaManager::checkAndExecuteAgendas() {
         return;
     }
     
-    // Parsear JSON
-    StaticJsonDocument<1024> doc;
+    // Parsear JSON (usar DynamicJsonDocument dimensionado según el tamaño del payload)
+    DynamicJsonDocument doc(jsonContent.length() + 1024);
     DeserializationError error = deserializeJson(doc, jsonContent);
     
     if (error) {
@@ -98,6 +98,9 @@ void AgendaManager::checkAndExecuteAgendas() {
     
     JsonArray agendas = doc["agendas"].as<JsonArray>();
     
+    // Obtener versión de la agenda si existe
+    int versionAgenda = doc["version"] | 0;
+    
     // Iterar sobre cada agenda
     for (JsonObject agenda : agendas) {
         if (shouldExecuteAgenda(agenda, currentDayOfWeek, currentHour, currentMinute)) {
@@ -105,12 +108,12 @@ void AgendaManager::checkAndExecuteAgendas() {
             int duracionMin = agenda["duracionMin"] | 0;
             String id = agenda["id"] | "unknown";
             
-            Logger::logf(LOG_LEVEL_INFO, "Ejecutando agenda [%s]: Zona %d por %d minutos", 
-                         id.c_str(), zona, duracionMin);
+            Logger::logf(LOG_LEVEL_INFO, "Ejecutando agenda [%s]: Zona %d por %d minutos (version %d)", 
+                         id.c_str(), zona, duracionMin, versionAgenda);
             
-            // Activar zona
+            // Activar zona con origen "agenda" y versión
             int duracionSeg = duracionMin * 60;
-            relayController->turnOn(zona, duracionSeg);
+            relayController->turnOn(zona, duracionSeg, "agenda", versionAgenda);
         }
     }
 }

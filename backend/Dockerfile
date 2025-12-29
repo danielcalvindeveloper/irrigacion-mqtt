@@ -19,6 +19,6 @@ RUN apk add --no-cache maven && mvn clean package -DskipTests
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=backend-build /app/target/irrigacion-*.jar app.jar
-ENV JAVA_OPTS="-Duser.timezone=UTC"
+ENV JAVA_OPTS="-Duser.timezone=America/Argentina/Buenos_Aires"
 EXPOSE 8080
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

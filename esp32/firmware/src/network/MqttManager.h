@@ -84,6 +84,9 @@ public:
     bool publishZoneStatus(int zona, bool estado, String origen);
     bool publishZoneStatus(int zona, bool estado, int tiempoRestante);
     
+    // Publicar evento de riego (inicio/fin)
+    bool publishRiegoEvento(int zona, String evento, String origen, int duracion, int versionAgenda = 0);
+    
     // Publicar telemetría (humedad, uptime, etc)
     bool publishTelemetry(int zona, int humedad);
     

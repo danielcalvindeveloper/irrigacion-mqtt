@@ -4,8 +4,11 @@ import ar.net.dac.iot.irrigacion.dto.ZoneStatusResponse;
 import ar.net.dac.iot.irrigacion.model.Agenda;
 import ar.net.dac.iot.irrigacion.repository.AgendaRepository;
 import ar.net.dac.iot.irrigacion.service.ZoneConfigService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -18,16 +21,22 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class ZoneStatusService {
+    
+    private static final Logger log = LoggerFactory.getLogger(ZoneStatusService.class);
+    
     private final AgendaRepository agendaRepository;
     private final ZoneConfigService zoneConfigService;
+    private final Clock clock;
     
     // Estado en memoria: nodeId -> zona -> status
     private final Map<String, Map<Integer, ZoneStatus>> statusCache = new ConcurrentHashMap<>();
 
     public ZoneStatusService(AgendaRepository agendaRepository,
-                            ZoneConfigService zoneConfigService) {
+                            ZoneConfigService zoneConfigService,
+                            Clock clock) {
         this.agendaRepository = agendaRepository;
         this.zoneConfigService = zoneConfigService;
+        this.clock = clock;
     }
 
     public List<ZoneStatusResponse> getStatus(UUID nodeId) {
@@ -78,34 +87,54 @@ public class ZoneStatusService {
             return null;
         }
 
-        LocalDate hoy = LocalDate.now();
-        LocalTime ahora = LocalTime.now();
+        LocalDate hoy = LocalDate.now(clock);
+        LocalTime ahora = LocalTime.now(clock);
+        log.info("Calculando próximo riego para zona {} - Clock timezone: {} - Fecha/Hora: {} {}", 
+                 zona, clock.getZone(), hoy, ahora);
         
         Agenda proximaAgenda = null;
         LocalDate fechaProxima = null;
-        int diasMinimoAdelante = Integer.MAX_VALUE;
+        LocalTime horaProxima = null;
+        long minutosMinimos = Long.MAX_VALUE;
         
         for (Agenda agenda : agendas) {
-            // Buscar en los próximos 7 días (0 = hoy, 1 = mañana, ..., 6 = dentro de 6 días, 7 = misma hora la próxima semana)
+            // Buscar la próxima ocurrencia de esta agenda en los próximos 7 días
             for (int diasAdelante = 0; diasAdelante <= 7; diasAdelante++) {
                 LocalDate fecha = hoy.plusDays(diasAdelante);
                 String diaSemana = getDiaSemana(fecha.getDayOfWeek());
                 
                 if (agenda.getDiasSemana().contains(diaSemana)) {
-                    // Si es hoy, verificar que no haya pasado la hora
-                    if (diasAdelante == 0 && !agenda.getHoraInicio().isAfter(ahora)) {
-                        continue; // Ya pasó, buscar próxima ocurrencia
+                    LocalTime hora = agenda.getHoraInicio();
+                    
+                    // Si es hoy, verificar que la hora sea futura (no haya pasado)
+                    if (diasAdelante == 0 && !ahora.isBefore(hora)) {
+                        continue; // Ya pasó o es ahora mismo, buscar próxima ocurrencia
                     }
                     
-                    // Seleccionar la agenda más próxima (menor días adelante, o si empate, la de menor hora)
-                    if (diasAdelante < diasMinimoAdelante || 
-                        (diasAdelante == diasMinimoAdelante && proximaAgenda != null && 
-                         agenda.getHoraInicio().isBefore(proximaAgenda.getHoraInicio()))) {
+                    // Calcular minutos totales hasta esta ejecución
+                    long minutos;
+                    if (diasAdelante == 0) {
+                        // Hoy: diferencia entre ahora y la hora de inicio
+                        minutos = java.time.Duration.between(ahora, hora).toMinutes();
+                    } else {
+                        // Días futuros: calcular tiempo total en minutos
+                        // Minutos completos de días enteros
+                        minutos = (long) diasAdelante * 24 * 60;
+                        // Restar minutos que ya pasaron hoy
+                        minutos -= (ahora.getHour() * 60 + ahora.getMinute());
+                        // Sumar minutos desde medianoche hasta la hora de la agenda
+                        minutos += (hora.getHour() * 60 + hora.getMinute());
+                    }
+                    
+                    // Seleccionar la agenda con menos minutos de espera
+                    if (minutos < minutosMinimos) {
                         proximaAgenda = agenda;
                         fechaProxima = fecha;
-                        diasMinimoAdelante = diasAdelante;
+                        horaProxima = hora;
+                        minutosMinimos = minutos;
                     }
-                    break; // Ya encontramos el próximo para esta agenda
+                    
+                    break; // Ya encontramos la próxima ocurrencia de esta agenda, pasar a la siguiente
                 }
             }
         }
@@ -120,7 +149,7 @@ public class ZoneStatusService {
         
         return String.format("%s %s (%dmin)", 
             cuando, 
-            proximaAgenda.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm")),
+            horaProxima.format(DateTimeFormatter.ofPattern("HH:mm")),
             proximaAgenda.getDuracionMin()
         );
     }

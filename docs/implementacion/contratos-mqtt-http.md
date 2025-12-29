@@ -29,6 +29,38 @@
   - `activa`: boolean, indica si la zona está regando
   - `tiempoRestante`: segundos restantes de riego (0 si inactiva)
 
+### Evento de riego
+- **Topic**: `riego/{nodeId}/evento`
+- **Payload** (publicado por ESP32):
+```json
+{
+  "zona": 1,
+  "evento": "inicio",
+  "timestamp": 1735415280,
+  "origen": "agenda",
+  "duracionProgramada": 600,
+  "versionAgenda": 7
+}
+```
+```json
+{
+  "zona": 1,
+  "evento": "fin",
+  "timestamp": 1735415880,
+  "origen": "agenda",
+  "duracionReal": 598,
+  "versionAgenda": 7
+}
+```
+- **Reglas**:
+  - `zona`: int 1..4, zona que ejecutó el riego
+  - `evento`: string ∈ {"inicio", "fin"}
+  - `timestamp`: epoch time en segundos (Unix timestamp)
+  - `origen`: string ∈ {"agenda", "manual"} indica si fue programado o comando directo
+  - `duracionProgramada`: segundos (solo en evento "inicio")
+  - `duracionReal`: segundos ejecutados (solo en evento "fin")
+  - `versionAgenda`: int nullable, versión de agenda que ejecutó (null si origen=manual)
+
 ### Sync de agenda
 - **Topic**: `riego/{nodeId}/agenda/sync`
 - **Payload** (publicado por backend):
@@ -149,6 +181,50 @@ Obtiene el estado actual de todas las zonas de un nodo.
 - `nombre`: string, nombre descriptivo de la zona
 - `activa`: boolean, si está regando actualmente
 - `tiempoRestanteSeg`: int nullable, segundos restantes de riego (null si inactiva)
+- `proximoRiego`: string, descripción legible del próximo riego programado
+
+### Historial de riego
+
+#### `GET /api/nodos/{nodeId}/historial`
+Obtiene el historial de eventos de riego de un nodo.
+
+**Query params**:
+- `limit`: int opcional (default 50, max 200), número de eventos a retornar
+
+**Response** (200 OK):
+```json
+[
+  {
+    "id": "uuid",
+    "zona": 1,
+    "timestamp": "2025-12-28T10:30:00Z",
+    "duracionSeg": 598,
+    "origen": "agenda",
+    "versionAgenda": 7
+  },
+  {
+    "id": "uuid",
+    "zona": 2,
+    "timestamp": "2025-12-28T09:15:00Z",
+    "duracionSeg": 120,
+    "origen": "manual",
+    "versionAgenda": null
+  }
+]
+```
+
+**Campos**:
+- `id`: UUID del evento
+- `zona`: int 1..4
+- `timestamp`: ISO 8601 timestamp del fin del riego
+- `duracionSeg`: int, duración real en segundos
+- `origen`: string ∈ {"agenda", "manual"}
+- `versionAgenda`: int nullable, versión de agenda (null si manual)
+
+#### `GET /api/nodos/{nodeId}/historial/zona/{zona}`
+Filtra el historial por zona específica.
+
+**Response** (200 OK): Mismo formato que endpoint anterior
 - `proximoRiego`: string nullable, próximo riego programado con formato "Hoy/Mañana HH:MM (Xmin)"
 
 **Nota**: El estado se actualiza en memoria cuando el backend recibe mensajes MQTT del topic `riego/{nodeId}/status/zona/{id}`.

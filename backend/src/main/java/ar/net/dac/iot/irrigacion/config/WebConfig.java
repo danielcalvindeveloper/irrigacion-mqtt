@@ -1,5 +1,6 @@
 package ar.net.dac.iot.irrigacion.config;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -9,14 +10,22 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.resource.PathResourceResolver;
 
 import java.io.IOException;
+import java.time.Clock;
+import java.time.ZoneId;
 
 /**
  * Configuración web para:
  * 1. CORS (desarrollo con frontend separado)
  * 2. Servir frontend Vue.js embebido (producción)
+ * 3. Proveer Clock del sistema para inyección de dependencias
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
+
+@Bean
+public Clock clock() {
+    return Clock.system(ZoneId.of("America/Argentina/Buenos_Aires"));
+}
 
 @Override
 public void addCorsMappings(CorsRegistry registry) {

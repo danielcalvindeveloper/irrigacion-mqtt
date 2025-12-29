@@ -24,6 +24,16 @@
   - Publica `telemetria` periódica.
 - Recomendado: Opción 2 para CI rápida; Opción 1 para validación en dispositivo real.
 
+## Nota: tamaño y parsing de agendas (firmware)
+
+- El endpoint HTTP `GET /api/nodos/{nodeId}/agendas` devuelve actualmente un array JSON minificado. El firmware espera internamente un objeto con campo `agendas` (como en los mensajes MQTT `agenda/sync`).
+- Para compatibilidad el firmware envuelve automáticamente la respuesta HTTP en `{"agendas": ...}` antes de guardarla en LittleFS.
+- Se aplicó un ajuste en el parser (`AgendaManager`) para usar `DynamicJsonDocument` dimensionado por `jsonContent.length() + 1024`. Esto evita errores `NoMemory` cuando el payload crece (~1KB actualmente).
+
+- Recomendaciones:
+  - Evitar mensajes MQTT retenidos con payloads grandes o limpiar retained al actualizar el formato.
+  - Para escalabilidad, el backend debería considerar paginación de agendas o endpoints con límites de tamaño para dispositivos con memoria limitada.
+
 ## Checklist de compatibilidad
 - Coincidencia exacta de topics con `nodeId`.
 - Codificación UTF-8, JSON minificado o pretty indiferente.

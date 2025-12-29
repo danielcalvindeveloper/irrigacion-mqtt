@@ -4,11 +4,17 @@
 // Constructor
 // ============================================================================
 RelayController::RelayController() {
-    lastUpdate = 0;    stateChangedCallback = nullptr;    
+    lastUpdate = 0;
+    stateChangedCallback = nullptr;
+    riegoEventCallback = nullptr;
+    
     // Inicializar arrays
     for (int i = 0; i < MAX_ZONES; i++) {
         zoneState[i] = false;
         zoneTimer[i] = 0;
+        zoneDuracionProgramada[i] = 0;
+        zoneOrigen[i] = "manual";
+        zoneVersionAgenda[i] = 0;
     }
 }
 
@@ -28,7 +34,7 @@ void RelayController::init() {
 // ============================================================================
 // Encender zona
 // ============================================================================
-void RelayController::turnOn(int zona, int duracionSeg) {
+void RelayController::turnOn(int zona, int duracionSeg, String origen, int versionAgenda) {
     if (!isValidZone(zona)) return;
     
     int idx = zona - 1;
@@ -39,12 +45,22 @@ void RelayController::turnOn(int zona, int duracionSeg) {
         return;
     }
     
+    // Guardar información del riego
+    zoneDuracionProgramada[idx] = duracionSeg;
+    zoneOrigen[idx] = origen;
+    zoneVersionAgenda[idx] = versionAgenda;
+    
     // Activar rele (logica invertida: LOW = ON)
     digitalWrite(RELAY_PINS[idx], RELAY_ON);
     zoneState[idx] = true;
     zoneTimer[idx] = duracionSeg;
     
-    Serial.printf("[INFO] Zona %d activada por %d segundos\n", zona, duracionSeg);
+    Serial.printf("[INFO] Zona %d activada por %d segundos (origen: %s)\n", zona, duracionSeg, origen.c_str());
+    
+    // Publicar evento de inicio
+    if (riegoEventCallback != nullptr) {
+        riegoEventCallback(zona, "inicio", origen, duracionSeg, versionAgenda);
+    }
 }
 
 // ============================================================================
@@ -55,10 +71,21 @@ void RelayController::turnOff(int zona) {
     
     int idx = zona - 1;
     
+    // Si la zona estaba activa, publicar evento de fin
+    if (zoneState[idx]) {
+        int duracionReal = zoneDuracionProgramada[idx] - zoneTimer[idx];
+        if (riegoEventCallback != nullptr) {
+            riegoEventCallback(zona, "fin", zoneOrigen[idx], duracionReal, zoneVersionAgenda[idx]);
+        }
+    }
+    
     // Desactivar rele
     digitalWrite(RELAY_PINS[idx], RELAY_OFF);
     zoneState[idx] = false;
     zoneTimer[idx] = 0;
+    zoneDuracionProgramada[idx] = 0;
+    zoneOrigen[idx] = "manual";
+    zoneVersionAgenda[idx] = 0;
     
     Serial.printf("[INFO] Zona %d desactivada\n", zona);
 }
@@ -103,11 +130,21 @@ void RelayController::loop() {
     for (int i = 0; i < MAX_ZONES; i++) {
         if (zoneTimer[i] > 0) {
             if (zoneTimer[i] <= elapsed) {
-                // Timer expirado - apagar zona
+                // Timer expirado - publicar evento de fin antes de apagar
+                if (riegoEventCallback != nullptr) {
+                    riegoEventCallback(i + 1, "fin", zoneOrigen[i], zoneDuracionProgramada[i], zoneVersionAgenda[i]);
+                }
+                
+                // Apagar zona
                 zoneTimer[i] = 0;
                 digitalWrite(RELAY_PINS[i], RELAY_OFF);
                 zoneState[i] = false;
                 Serial.printf("[INFO] Zona %d apagada automaticamente (timer expirado)\n", i + 1);
+                
+                // Limpiar info de riego
+                zoneDuracionProgramada[i] = 0;
+                zoneOrigen[i] = "manual";
+                zoneVersionAgenda[i] = 0;
                 
                 // Notificar cambio de estado
                 if (stateChangedCallback != nullptr) {
@@ -164,4 +201,11 @@ bool RelayController::isValidZone(int zona) {
 // ============================================================================
 void RelayController::setStateChangedCallback(ZoneStateChangedCallback callback) {
     stateChangedCallback = callback;
+}
+
+// ============================================================================
+// Registrar callback para eventos de riego
+// ============================================================================
+void RelayController::setRiegoEventCallback(RiegoEventCallback callback) {
+    riegoEventCallback = callback;
 }

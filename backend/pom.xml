@@ -14,6 +14,7 @@
     <spring-boot.version>3.4.0</spring-boot.version>
     <testcontainers.version>1.20.1</testcontainers.version>
     <flyway.version>10.17.1</flyway.version>
+    <maven.build.timestamp.format>yyyyMMdd-HHmmss</maven.build.timestamp.format>
   </properties>
 
   <dependencies>
@@ -107,6 +108,40 @@
   </dependencyManagement>
 
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <excludes>
+          <exclude>**/*.woff</exclude>
+          <exclude>**/*.woff2</exclude>
+          <exclude>**/*.ttf</exclude>
+          <exclude>**/*.eot</exclude>
+          <exclude>**/*.svg</exclude>
+          <exclude>**/*.png</exclude>
+          <exclude>**/*.jpg</exclude>
+          <exclude>**/*.jpeg</exclude>
+          <exclude>**/*.gif</exclude>
+          <exclude>**/*.ico</exclude>
+        </excludes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <includes>
+          <include>**/*.woff</include>
+          <include>**/*.woff2</include>
+          <include>**/*.ttf</include>
+          <include>**/*.eot</include>
+          <include>**/*.svg</include>
+          <include>**/*.png</include>
+          <include>**/*.jpg</include>
+          <include>**/*.jpeg</include>
+          <include>**/*.gif</include>
+          <include>**/*.ico</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>

@@ -179,6 +179,49 @@ bool MqttManager::publishZoneStatus(int zona, bool estado, int tiempoRestante) {
 }
 
 // ============================================================================
+// Publicar evento de riego
+// ============================================================================
+bool MqttManager::publishRiegoEvento(int zona, String evento, String origen, int duracion, int versionAgenda) {
+    if (!isConnected()) return false;
+    
+    // Construir topic: riego/{NODE_ID}/evento
+    char topic[128];
+    snprintf(topic, sizeof(topic), "riego/%s/evento", NODE_ID);
+    
+    // Construir payload JSON
+    StaticJsonDocument<JSON_BUFFER_SMALL> doc;
+    doc["zona"] = zona;
+    doc["evento"] = evento; // "inicio" o "fin"
+    doc["timestamp"] = millis() / 1000; // timestamp en segundos (será reemplazado por NTP)
+    doc["origen"] = origen; // "agenda" o "manual"
+    
+    if (evento == "fin") {
+        doc["duracionReal"] = duracion;
+    } else {
+        doc["duracionProgramada"] = duracion;
+    }
+    
+    if (versionAgenda > 0) {
+        doc["versionAgenda"] = versionAgenda;
+    } else {
+        doc["versionAgenda"] = nullptr;
+    }
+    
+    char payload[JSON_BUFFER_SMALL];
+    serializeJson(doc, payload);
+    
+    bool result = mqttClient->publish(topic, payload, false);
+    
+    if (result) {
+        Logger::logf(LOG_LEVEL_INFO, "Publicado evento riego zona %d: %s (%s)", zona, evento.c_str(), origen.c_str());
+    } else {
+        Logger::logf(LOG_LEVEL_ERROR, "Fallo al publicar evento zona %d", zona);
+    }
+    
+    return result;
+}
+
+// ============================================================================
 // Publicar telemetría
 // ============================================================================
 bool MqttManager::publishTelemetry(int zona, int humedad) {

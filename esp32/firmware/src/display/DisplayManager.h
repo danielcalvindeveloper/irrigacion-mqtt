@@ -22,6 +22,10 @@ private:
     bool lastWifiConnected;
     bool lastMqttConnected;
     
+    // Para alternar fecha/hora
+    unsigned long lastDateTimeToggle;
+    bool showingDate;
+    
 public:
     DisplayManager();
     ~DisplayManager();
@@ -43,6 +47,9 @@ public:
     void drawWiFiIcon(int rssi, bool connected);
     void drawMqttIcon(bool connected);
     void updateStatusIcons(int wifiRssi, bool wifiConnected, bool mqttConnected);
+    
+    // Fecha y hora en centro superior
+    void updateDateTimeDisplay(int dayOfWeek, int dayOfMonth, int hour, int minute);
     
     // Línea de estado inferior
     void showStatusLine(const char* message);

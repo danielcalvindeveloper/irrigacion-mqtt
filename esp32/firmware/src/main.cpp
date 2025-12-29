@@ -23,6 +23,7 @@ void mainLoop();
 void onMqttCommand(int zona, String accion, int duracion);
 void onAgendaSync(String payload);
 void onZoneStateChanged(int zona, bool estado);
+void onRiegoEvent(int zona, String evento, String origen, int duracion, int versionAgenda);
 void showStoredAgenda();
 void fetchAndStoreAgendas();
 
@@ -95,6 +96,7 @@ void setup() {
     displayManager.display();
     relayController.init();
     relayController.setStateChangedCallback(onZoneStateChanged);
+    relayController.setRiegoEventCallback(onRiegoEvent);
     
     // AgendaManager (requiere SPIFFSManager, TimeSync, RelayController)
     displayManager.showStatusLine("Preparando agendas");
@@ -136,6 +138,18 @@ void loop() {
         lastDisplayUpdate = now;
         int rssi = wifiManager.isConnected() ? wifiManager.getRSSI() : -100;
         displayManager.updateStatusIcons(rssi, wifiManager.isConnected(), mqttManager.isConnected());
+        
+        // Actualizar fecha/hora en centro superior
+        time_t rawtime = timeSync.getEpoch();
+        struct tm* timeinfo = localtime(&rawtime);
+        if (timeinfo != nullptr) {
+            displayManager.updateDateTimeDisplay(
+                timeinfo->tm_wday,      // 0=Domingo, 1=Lunes, etc
+                timeinfo->tm_mday,      // Día del mes (1-31)
+                timeinfo->tm_hour,      // Hora (0-23)
+                timeinfo->tm_min        // Minuto (0-59)
+            );
+        }
         
         // Actualizar indicadores de zonas
         bool zone1Active = relayController.isActive(1);
@@ -503,6 +517,19 @@ void onZoneStateChanged(int zona, bool estado) {
     if (mqttManager.isConnected()) {
         int remaining = estado ? relayController.getRemainingTime(zona) : 0;
         mqttManager.publishZoneStatus(zona, estado, remaining);
+    }
+}
+
+void onRiegoEvent(int zona, String evento, String origen, int duracion, int versionAgenda) {
+    // Callback para eventos de inicio/fin de riego
+    Logger::logf(LOG_LEVEL_INFO, ">>> Evento riego zona %d: %s (%s, %d seg)", 
+                 zona, evento.c_str(), origen.c_str(), duracion);
+    
+    // Publicar evento via MQTT
+    if (mqttManager.isConnected()) {
+        mqttManager.publishRiegoEvento(zona, evento, origen, duracion, versionAgenda);
+    } else {
+        Logger::warn("MQTT no conectado - evento no publicado");
     }
 }
 
