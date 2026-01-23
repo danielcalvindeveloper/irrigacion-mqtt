@@ -61,6 +61,35 @@
   - `duracionReal`: segundos ejecutados (solo en evento "fin")
   - `versionAgenda`: int nullable, versión de agenda que ejecutó (null si origen=manual)
 
+### Evento del sistema (NUEVO 2026-01-23)
+- **Topic**: `riego/{nodeId}/sistema/evento`
+- **Payload** (publicado por ESP8266):
+```json
+{
+  "tipo": "agenda_sync_ok",
+  "timestamp": 1735415280,
+  "detalles": "Agendas cargadas: 9 total, 9 activas",
+  "agendasCargadas": 9,
+  "memoriaLibre": 38256
+}
+```
+- **Reglas**:
+  - `tipo`: string ∈ {"agenda_sync_ok", "agenda_initial_load_ok", "agenda_parse_error", "agenda_format_error", "agenda_storage_error", "agenda_load_error", "agenda_fetch_warning"}
+  - `timestamp`: epoch time en segundos (Unix timestamp)
+  - `detalles`: string descriptivo del evento
+  - `agendasCargadas`: int, número de agendas cargadas (-1 si N/A)
+  - `memoriaLibre`: int, bytes de RAM libre (ESP.getFreeHeap())
+- **Tipos de Eventos**:
+  - `agenda_sync_ok` (INFO): Sincronización MQTT o parseo exitoso
+  - `agenda_initial_load_ok` (INFO): Carga HTTP inicial exitosa
+  - `agenda_parse_error` (ERROR): Error parseando JSON (NoMemory, etc)
+  - `agenda_format_error` (ERROR): JSON sin estructura esperada
+  - `agenda_storage_error` (ERROR): Error guardando en SPIFFS
+  - `agenda_load_error` (CRITICAL): Sistema sin agendas disponibles
+  - `agenda_fetch_warning` (WARNING): Backend no disponible, usando cache
+
+**Documentación completa**: Ver `docs/implementacion/mqtt-eventos-sistema.md`
+
 ### Sync de agenda
 - **Topic**: `riego/{nodeId}/agenda/sync`
 - **Payload** (publicado por backend):
