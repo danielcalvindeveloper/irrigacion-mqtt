@@ -39,10 +39,11 @@ void MqttManager::init() {
     mqttClient->setKeepAlive(MQTT_KEEP_ALIVE);
     
     // Aumentar buffer MQTT para recibir mensajes de agenda (por defecto es 256 bytes)
-    if (!mqttClient->setBufferSize(1024)) {
-        Logger::error("No se pudo establecer buffer MQTT de 1024 bytes");
+    // 10240 bytes permite ~30-35 agendas completas (8 zonas × 4)
+    if (!mqttClient->setBufferSize(10240)) {
+        Logger::error("No se pudo establecer buffer MQTT de 10240 bytes");
     } else {
-        Logger::info("Buffer MQTT configurado a 1024 bytes");
+        Logger::info("Buffer MQTT configurado a 10KB (10240 bytes)");
     }
     
     // Construir patterns de topics
@@ -216,6 +217,43 @@ bool MqttManager::publishRiegoEvento(int zona, String evento, String origen, int
         Logger::logf(LOG_LEVEL_INFO, "Publicado evento riego zona %d: %s (%s)", zona, evento.c_str(), origen.c_str());
     } else {
         Logger::logf(LOG_LEVEL_ERROR, "Fallo al publicar evento zona %d", zona);
+    }
+    
+    return result;
+}
+
+// ============================================================================
+// Publicar evento del sistema
+// ============================================================================
+bool MqttManager::publishSystemEvent(String tipoEvento, String detalles, int agendasCargadas) {
+    if (!isConnected()) return false;
+    
+    // Construir topic: riego/{NODE_ID}/sistema/evento
+    char topic[128];
+    snprintf(topic, sizeof(topic), "riego/%s/sistema/evento", NODE_ID);
+    
+    // Construir payload JSON
+    StaticJsonDocument<JSON_BUFFER_MEDIUM> doc;
+    doc["tipo"] = tipoEvento;
+    doc["timestamp"] = millis() / 1000;
+    doc["detalles"] = detalles;
+    
+    if (agendasCargadas >= 0) {
+        doc["agendasCargadas"] = agendasCargadas;
+    }
+    
+    // Agregar info de memoria para diagnóstico
+    doc["memoriaLibre"] = ESP.getFreeHeap();
+    
+    char payload[JSON_BUFFER_MEDIUM];
+    serializeJson(doc, payload);
+    
+    bool result = mqttClient->publish(topic, payload, false);
+    
+    if (result) {
+        Logger::logf(LOG_LEVEL_INFO, "Publicado evento sistema: %s - %s", tipoEvento.c_str(), detalles.c_str());
+    } else {
+        Logger::logf(LOG_LEVEL_ERROR, "Fallo al publicar evento sistema: %s", tipoEvento.c_str());
     }
     
     return result;

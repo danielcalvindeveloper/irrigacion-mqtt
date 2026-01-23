@@ -87,6 +87,9 @@ public:
     // Publicar evento de riego (inicio/fin)
     bool publishRiegoEvento(int zona, String evento, String origen, int duracion, int versionAgenda = 0);
     
+    // Publicar evento del sistema (agenda sync, errores, etc)
+    bool publishSystemEvent(String tipoEvento, String detalles, int agendasCargadas = -1);
+    
     // Publicar telemetría (humedad, uptime, etc)
     bool publishTelemetry(int zona, int humedad);
     

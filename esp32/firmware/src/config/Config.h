@@ -7,17 +7,21 @@
 
 
 // ============= Hardware Config para NodeMCU ESP8266 =============
-#define MAX_ZONES 4
+#define MAX_ZONES 8
 #define MAX_SENSORS 1  // Solo 1 pin ADC disponible (A0)
 #define LED_PIN 2      // LED integrado en NodeMCU (GPIO2)
 
 // Pines de relés (OUTPUT - Lógica invertida: LOW=ON, HIGH=OFF)
-// D1=GPIO5, D2=GPIO4, D5=GPIO14, D6=GPIO12
+// D1=GPIO5, D2=GPIO4, D5=GPIO14, D6=GPIO12, D7=GPIO13, D8=GPIO15, SD3=GPIO10, RX=GPIO3
 static const int RELAY_PINS[MAX_ZONES] = {
     5,   // D1 - Zona 1
     4,   // D2 - Zona 2
     14,  // D5 - Zona 3
-    12   // D6 - Zona 4
+    12,  // D6 - Zona 4
+    13,  // D7 - Zona 5
+    15,  // D8 - Zona 6
+    10,  // SD3 - Zona 7
+    3    // RX - Zona 8 (⚠️ deshabilita Serial)
 };
 
 // Pines de sensores de humedad (INPUT - ADC 10-bit)
@@ -75,12 +79,13 @@ static const int SENSOR_PINS[MAX_SENSORS] = {
 // ============= Storage Config (SPIFFS/LittleFS) =============
 #define AGENDA_FILE "/agendas.json"
 #define CONFIG_FILE "/config.json"
-#define MAX_AGENDAS 30  // Máximo de agendas totales (todas las zonas)
+#define MAX_AGENDAS 32  // Máximo de agendas totales (8 zonas × 4 agendas/zona)
+// ⚠️ LÍMITE CRÍTICO DE RAM: 32 agendas usan ~24KB durante parseo
 
 // Tamaño de buffers JSON
 #define JSON_BUFFER_SMALL 256   // Comandos, estado
 #define JSON_BUFFER_MEDIUM 512  // Lecturas de sensores
-#define JSON_BUFFER_LARGE 2048  // Sincronización de agendas
+#define JSON_BUFFER_LARGE 8192  // Sincronización de agendas (hasta 32 agendas, 8 zonas × 4)
 
 // ============= Debug Config =============
 #define DEBUG_SERIAL true

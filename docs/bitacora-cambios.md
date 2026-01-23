@@ -2,6 +2,68 @@
 
 Este documento registra todos los cambios relevantes realizados en el firmware, hardware y documentación del proyecto. Debe mantenerse actualizado en cada sesión de trabajo.
 
+## 2026-01-23
+
+### Feature: Sistema Completo de Eventos MQTT desde ESP8266
+
+**Objetivo:**
+- Tracking automático de todas las operaciones críticas del sistema
+- Monitoreo de salud del dispositivo en tiempo real
+- Detección temprana de problemas (memoria, sincronización, storage)
+- Historial completo de eventos para debugging y analytics
+
+**Implementación:**
+
+**Nuevo Topic MQTT:**
+- `riego/{nodeId}/sistema/evento` - Eventos del sistema (agendas, errores, advertencias)
+- `riego/{nodeId}/evento` - Eventos de riego (inicio/fin) - ya existía
+
+**Eventos Implementados:**
+
+1. **agenda_sync_ok** (INFO) - Sincronización exitosa vía MQTT
+2. **agenda_initial_load_ok** (INFO) - Carga inicial desde HTTP
+3. **agenda_parse_error** (ERROR) - Error parseando JSON
+4. **agenda_format_error** (ERROR) - JSON sin formato esperado
+5. **agenda_storage_error** (ERROR) - Error guardando en SPIFFS
+6. **agenda_load_error** (CRITICAL) - Sistema sin agendas
+7. **agenda_fetch_warning** (WARNING) - Backend no disponible
+
+**Archivos Modificados:**
+- `esp32/firmware/src/network/MqttManager.h/cpp` (nuevo método publishSystemEvent)
+- `esp32/firmware/src/scheduler/AgendaManager.h/cpp` (eventos de parseo)
+- `esp32/firmware/src/main.cpp` (eventos en callbacks)
+- `docs/implementacion/mqtt-eventos-sistema.md` (documentación completa)
+
+---
+
+### Bugfix: Aumento de Buffers para 32 Agendas (8 Zonas × 4)
+
+**Problema:**
+- Con 9 agendas (2.5KB JSON) el sistema funcionaba
+- Expansión a 8 zonas × 4 agendas = 32 agendas (~9KB JSON)
+- Buffer MQTT anterior (3KB) era insuficiente
+- DynamicJsonDocument sin overhead suficiente
+
+**Solución:**
+- **MQTT buffer**: 3KB → 10KB (10,240 bytes)
+- **JSON_BUFFER_LARGE**: 4KB → 8KB (8,192 bytes)
+- **DynamicJsonDocument**: overhead aumentado a 1.5x + 1024 bytes
+- **MAX_ZONES**: 4 → 8 zonas
+- **MAX_AGENDAS**: 30 → 32
+
+**⚠️ Advertencias:**
+- Memoria en límite crítico (~24KB usados durante parseo, ~20KB libres)
+- GPIO13 (D7) conflicto entre Display y Zona 5
+- GPIO3 (RX) en Zona 8 deshabilita Serial
+- **Recomendación**: Usar módulo expansor PCF8574 I2C para evitar conflictos
+
+**Archivos Modificados:**
+- `esp32/firmware/src/network/MqttManager.cpp` (buffer 10KB)
+- `esp32/firmware/src/config/Config.h` (MAX_ZONES=8, JSON_BUFFER_LARGE=8KB)
+- `esp32/firmware/src/scheduler/AgendaManager.cpp` (overhead mejorado, logs de memoria)
+
+---
+
 ## 2025-12-28
 
 ### Feature: Sistema Completo de Historial de Eventos de Riego

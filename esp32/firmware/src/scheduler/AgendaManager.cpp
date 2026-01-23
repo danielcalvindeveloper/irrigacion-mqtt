@@ -8,10 +8,11 @@
 // ============================================================================
 // Constructor y Destructor
 // ============================================================================
-AgendaManager::AgendaManager(SPIFFSManager* spiffs, TimeSync* timeSync, RelayController* relay) {
+AgendaManager::AgendaManager(SPIFFSManager* spiffs, TimeSync* timeSync, RelayController* relay, MqttManager* mqtt) {
     spiffsManager = spiffs;
     timeSyncManager = timeSync;
     relayController = relay;
+    mqttManager = mqtt;
     enabled = true;
     lastCheckTime = 0;
     lastMinuteChecked = -1;
@@ -81,18 +82,41 @@ void AgendaManager::checkAndExecuteAgendas() {
         return;
     }
     
-    // Parsear JSON (usar DynamicJsonDocument dimensionado según el tamaño del payload)
-    DynamicJsonDocument doc(jsonContent.length() + 1024);
+    // Log de tamaño para diagnóstico
+    Logger::logf(LOG_LEVEL_DEBUG, "JSON de agendas: %d bytes (RAM libre: %d bytes)", 
+                 jsonContent.length(), ESP.getFreeHeap());
+    
+    // Parsear JSON (usar DynamicJsonDocument con overhead suficiente)
+    // ArduinoJson requiere ~1.5x el tamaño del JSON + overhead de estructuras
+    size_t docSize = (jsonContent.length() * 3 / 2) + 1024;
+    Logger::logf(LOG_LEVEL_DEBUG, "Reservando %d bytes para DynamicJsonDocument", docSize);
+    
+    DynamicJsonDocument doc(docSize);
     DeserializationError error = deserializeJson(doc, jsonContent);
     
     if (error) {
-        Logger::logf(LOG_LEVEL_ERROR, "Error parseando agendas: %s", error.c_str());
+        String errorMsg = String("Error parseando agendas: ") + error.c_str() + 
+                         " (JSON: " + String(jsonContent.length()) + " bytes, Buffer: " + String(docSize) + " bytes)";
+        Logger::logf(LOG_LEVEL_ERROR, "%s", errorMsg.c_str());
+        
+        // Publicar evento de error via MQTT
+        if (mqttManager != nullptr && mqttManager->isConnected()) {
+            mqttManager->publishSystemEvent("agenda_parse_error", errorMsg, 0);
+        }
+        
         return;
     }
     
     // Verificar que exista el array de agendas
     if (!doc.containsKey("agendas")) {
-        Logger::warn("JSON no contiene campo 'agendas'");
+        String errorMsg = "JSON no contiene campo 'agendas'";
+        Logger::warn(errorMsg.c_str());
+        
+        // Publicar evento de error via MQTT
+        if (mqttManager != nullptr && mqttManager->isConnected()) {
+            mqttManager->publishSystemEvent("agenda_format_error", errorMsg, 0);
+        }
+        
         return;
     }
     
@@ -101,8 +125,16 @@ void AgendaManager::checkAndExecuteAgendas() {
     // Obtener versión de la agenda si existe
     int versionAgenda = doc["version"] | 0;
     
+    // Contar agendas activas
+    int agendasActivas = 0;
+    int agendasTotal = 0;
+    
     // Iterar sobre cada agenda
     for (JsonObject agenda : agendas) {
+        agendasTotal++;
+        bool activa = agenda["activa"] | false;
+        if (activa) agendasActivas++;
+        
         if (shouldExecuteAgenda(agenda, currentDayOfWeek, currentHour, currentMinute)) {
             int zona = agenda["zona"] | 0;
             int duracionMin = agenda["duracionMin"] | 0;
@@ -115,6 +147,14 @@ void AgendaManager::checkAndExecuteAgendas() {
             int duracionSeg = duracionMin * 60;
             relayController->turnOn(zona, duracionSeg, "agenda", versionAgenda);
         }
+    }
+    
+    // Publicar evento de sincronización exitosa (solo la primera vez que se parsea exitosamente)
+    static bool firstSuccessfulParse = true;
+    if (firstSuccessfulParse && mqttManager != nullptr && mqttManager->isConnected()) {
+        String detalles = String("Agendas cargadas: ") + agendasTotal + " total, " + agendasActivas + " activas";
+        mqttManager->publishSystemEvent("agenda_sync_ok", detalles, agendasTotal);
+        firstSuccessfulParse = false;
     }
 }
 

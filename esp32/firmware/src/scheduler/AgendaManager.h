@@ -7,6 +7,7 @@
 class SPIFFSManager;
 class TimeSync;
 class RelayController;
+class MqttManager;
 
 // ============================================================================
 // AgendaManager - Gestión y ejecución de agendas programadas
@@ -19,6 +20,7 @@ private:
     SPIFFSManager* spiffsManager;
     TimeSync* timeSyncManager;
     RelayController* relayController;
+    MqttManager* mqttManager;
     
     bool enabled;
     unsigned long lastCheckTime;
@@ -31,7 +33,7 @@ private:
     String getDayOfWeekString(int dayOfWeek);
 
 public:
-    AgendaManager(SPIFFSManager* spiffs, TimeSync* timeSync, RelayController* relay);
+    AgendaManager(SPIFFSManager* spiffs, TimeSync* timeSync, RelayController* relay, MqttManager* mqtt);
     ~AgendaManager();
     
     void init();

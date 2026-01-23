@@ -98,10 +98,10 @@ void setup() {
     relayController.setStateChangedCallback(onZoneStateChanged);
     relayController.setRiegoEventCallback(onRiegoEvent);
     
-    // AgendaManager (requiere SPIFFSManager, TimeSync, RelayController)
+    // AgendaManager (requiere SPIFFSManager, TimeSync, RelayController, MqttManager)
     displayManager.showStatusLine("Preparando agendas");
     displayManager.display();
-    agendaManager = new AgendaManager(&spiffsManager, &timeSync, &relayController);
+    agendaManager = new AgendaManager(&spiffsManager, &timeSync, &relayController, &mqttManager);
     agendaManager->init();
     
     // TODO: Inicializar otros modulos
@@ -499,11 +499,29 @@ void onAgendaSync(String payload) {
             
             // Mostrar contenido de la agenda guardada
             showStoredAgenda();
+            
+            // Publicar evento de sincronización exitosa
+            if (mqttManager.isConnected()) {
+                String detalles = String("Agenda sincronizada correctamente (") + payload.length() + " bytes)";
+                mqttManager.publishSystemEvent("agenda_sync_ok", detalles, -1);
+            }
         } else {
             Logger::error("Error al guardar agenda en SPIFFS");
+            
+            // Publicar evento de error
+            if (mqttManager.isConnected()) {
+                String detalles = String("Error al guardar agenda en SPIFFS (") + payload.length() + " bytes, " + 
+                                spiffsManager.getFreeBytes() + " bytes libres)";
+                mqttManager.publishSystemEvent("agenda_storage_error", detalles, 0);
+            }
         }
     } else {
         Logger::warn("SPIFFS no inicializado, agenda no guardada");
+        
+        // Publicar evento de error
+        if (mqttManager.isConnected()) {
+            mqttManager.publishSystemEvent("agenda_storage_error", "SPIFFS no inicializado", 0);
+        }
     }
     
     // TODO: Parsear agenda y cargar en AgendaManager
@@ -590,6 +608,11 @@ void fetchAndStoreAgendas() {
     if (!wifiManager.isConnected()) {
         Logger::warn("WiFi no conectado, no se pueden solicitar agendas");
         Logger::info("Continuando con agendas almacenadas localmente");
+        
+        // Publicar evento de advertencia
+        if (mqttManager.isConnected()) {
+            mqttManager.publishSystemEvent("agenda_fetch_warning", "WiFi no conectado - usando agendas locales", -1);
+        }
         return;
     }
     
@@ -603,8 +626,18 @@ void fetchAndStoreAgendas() {
         if (spiffsManager.exists("/agenda.json")) {
             Logger::info("Continuando con agendas almacenadas localmente");
             showStoredAgenda();
+            
+            // Publicar evento de advertencia
+            if (mqttManager.isConnected()) {
+                mqttManager.publishSystemEvent("agenda_fetch_warning", "Backend no disponible - usando agendas locales", -1);
+            }
         } else {
             Logger::warn("No hay agendas locales - sistema funcionara sin agendas programadas");
+            
+            // Publicar evento de error crítico
+            if (mqttManager.isConnected()) {
+                mqttManager.publishSystemEvent("agenda_load_error", "Sin agendas: backend no disponible y sin cache local", 0);
+            }
         }
         return;
     }
@@ -614,6 +647,12 @@ void fetchAndStoreAgendas() {
     // El HTTP retorna un array directo [...], pero el ESP8266 espera formato MQTT: {"agendas": [...]}
     // Envolver el array en un objeto para mantener compatibilidad con AgendaManager
     String wrappedJson = "{\"agendas\":" + agendasJson + "}";
+    
+    // Publicar evento de carga inicial exitosa
+    if (mqttManager.isConnected()) {
+        String detalles = String("Agendas cargadas desde backend HTTP (") + agendasJson.length() + " bytes)";
+        mqttManager.publishSystemEvent("agenda_initial_load_ok", detalles, -1);
+    }
     
     // Procesar como si fuera una sincronización MQTT
     onAgendaSync(wrappedJson);
