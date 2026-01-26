@@ -48,6 +48,8 @@ static const int SENSOR_PINS[MAX_SENSORS] = {
 // ============= Network Config =============
 #define WIFI_TIMEOUT 30000           // 30 segundos para conectar WiFi
 #define MQTT_RECONNECT_DELAY 15000   // 15 segundos entre intentos MQTT
+#define MQTT_MAX_ATTEMPTS 20         // Máximo 20 intentos antes de reinicio (5min aprox)
+#define MQTT_TIMEOUT 300000          // 5 minutos sin conexión MQTT = reinicio forzado
 #define OFFLINE_RETRY_INTERVAL 60000 // 60 segundos en modo offline
 
 // NTP - Sincronización de tiempo

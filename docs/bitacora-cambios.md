@@ -1,6 +1,161 @@
 # Bitácora de Cambios - Sistema de Riego MQTT (NodeMCU/ESP8266)
+## 2026-01-23
+### Bugfix: Compilación ESP8266 - Include de MqttManager
+**Problema:**
+- AgendaManager.cpp llamaba a `mqttManager->publishSystemEvent()` 
+- Pero MqttManager.h solo tenía declaración forward (`class MqttManager;`)
+- Error: "invalid use of incomplete type 'class MqttManager'"
+- Previo a fix: compilación abortaba
+**Impacto:**
+- Sistema no podía traducir estado de parseo a eventos MQTT
+- Agendas inválidas no se reportaban
+- Logs del backend no tenían visibilidad de errores en ESP
+**Solución Implementada:**
+
+1. **AgendaManager.cpp**
+   - Cambio: `#include "../network/MqttManager.h"` (en lugar de forward declaration)
+   - Ahora tiene acceso completo a métodos public
+   - publishSystemEvent puede ser llamado sin errores
+
+2. **MqttManager.h**
+   - Agregados constants: `MQTT_MAX_ATTEMPTS = 20`, `MQTT_TIMEOUT = 300000`
+   - Método public: `publishSystemEvent(eventType, payload)`
+   - Ya implementado en MqttManager.cpp
+
+**Archivos Modificados:**
+- `esp32/firmware/src/scheduler/AgendaManager.cpp` (include completo)
+- `esp32/firmware/src/config/Config.h` (documentación de const)
+
+**Resultado:**
+- ✅ Compilación exitosa: 382,171 bytes (36.6% flash)
+- ✅ Firmware uploadea sin errores
+- ✅ Eventos del sistema se publican correctamente
+
+---
+
+## 2026-01-23
+# Bitácora de Cambios - Sistema de Riego MQTT (NodeMCU/ESP8266)
 
 Este documento registra todos los cambios relevantes realizados en el firmware, hardware y documentación del proyecto. Debe mantenerse actualizado en cada sesión de trabajo.
+
+## 2026-01-26
+
+### Bugfix: Reconexión MQTT con Reinicio Automático del ESP8266
+
+**Problema:**
+- Si el broker MQTT se cae, el PubSubClient queda en estado inconsistente
+- Aunque el broker se restablezca, el ESP8266 no puede reconectar
+- El loop de reconexión solo resetea el contador después de 60s de espera
+- Efecto: sistema "zombi" sin conexión MQTT indefinidamente
+
+**Solución Implementada:**
+
+1. **MqttManager.h - Nuevas constantes de timeout**
+   - `MAX_TOTAL_ATTEMPTS = 20`: máximo de intentos totales antes de reinicio
+   - `RECONNECT_TIMEOUT = 300000`: 5 minutos sin conexión = reinicio forzado
+   - Documenta límites claros de reconexión
+
+2. **MqttManager.cpp - Loop mejorado con reinicio**
+   - Registra `lastSuccessfulConnection` al conectarse exitosamente
+   - **Condición 1**: Si alcanza 20 intentos fallidos → `ESP.restart()` inmediato
+   - **Condición 2**: Si lleva >5 min desconectado → `ESP.restart()` forzado
+   - Logs detallados antes de cada reinicio
+
+3. **Comportamiento esperado:**
+   - Broker normal: conecta en 1-2 intentos (sin reinicio)
+   - Broker caído (5 min): intenta 20×15s, luego reinicia ESP
+   - Tras reinicio, si broker está online: reconecta automáticamente
+
+4. **Config.h - Documentación de timeouts**
+   - `MQTT_MAX_ATTEMPTS = 20`
+   - `MQTT_TIMEOUT = 300000` (5 min)
+
+**Testing Realizado:**
+```
+[✓] Firmware compiló sin errores
+[✓] ESP8266 conecta a WiFi correctamente
+[✓] MQTT conecta en intento 1 exitosamente
+[✓] 9 agendas cargadas desde backend
+[✓] Eventos de sistema publicados (agenda_initial_load_ok, agenda_sync_ok)
+[✓] Comandos MQTT procesándose correctamente
+```
+
+**Archivos Modificados:**
+- `esp32/firmware/src/network/MqttManager.h` (constantes de timeout)
+- `esp32/firmware/src/network/MqttManager.cpp` (loop con reinicio automático)
+- `esp32/firmware/src/config/Config.h` (documentación)
+
+**Notas:**
+- Reinicio es limpio: borra estado interno de PubSubClient y WiFi
+- Ideal para infraestructura donde broker pueden fallar
+- Intervalo 15s entre intentos es razonable (no agresivo)
+- Logging detallado para auditoría de reinicies
+
+---
+
+### Bugfix: Sincronización de Eventos MQTT Entre ESP8266 y Backend
+
+**Problema:**
+- ESP8266 publica eventos de sistema en topic `riego/{nodeId}/sistema/evento` (nuevo desde 2026-01-23)
+- Backend no tenía subscriber para consumir estos eventos
+- Backend lanzaba excepciones al parsear eventos de riego si campos requeridos faltaban
+- Campo `raw` mapeado incorrectamente como VARCHAR en lugar de JSONB
+
+**Impacto:**
+- Eventos de sistema (agenda_sync_ok, agenda_parse_error, etc.) se perdían silenciosamente
+- Mensajes MQTT malformados causaban excepciones no capturadas
+- Errores de persistencia por incompatibilidad Hibernate ↔ PostgreSQL JSONB
+
+**Solución Implementada:**
+
+1. **Backend - Hardening de RiegoEventoService.java**
+   - Validar existencia de campos requeridos antes de acceder
+   - Descartar mensajes incompletos con log WARN en lugar de excepciones
+   - Validar `duracionReal` para eventos "fin"
+
+2. **Backend - Nuevo MqttSistemaSubscriber.java** (Service)
+   - Suscrito a topic: `riego/+/sistema/evento`
+   - Parsea eventos con validación segura
+   - Log diferenciado por severidad:
+     - ERROR: `agenda_parse_error`, `agenda_format_error`, `agenda_storage_error`, `agenda_load_error`
+     - WARN: `agenda_fetch_warning`
+     - INFO: resto de eventos
+   - Descarta mensajes malformados silenciosamente
+   - No afecta flujo principal del backend
+
+3. **Backend - Mapeo JSONB en RiegoEvento.java**
+   - Agregado: `@JdbcTypeCode(SqlTypes.JSON)` al campo `raw`
+   - Hibernat 6.x mapea correctamente String → JSONB PostgreSQL
+   - Fix: error "la columna «raw» es de tipo jsonb pero la expresión es de tipo character varying"
+
+**Archivos Modificados:**
+- `backend/src/main/java/.../service/RiegoEventoService.java` (validación de campos)
+- `backend/src/main/java/.../service/MqttSistemaSubscriber.java` (nuevo)
+- `backend/src/main/java/.../model/RiegoEvento.java` (anotación @JdbcTypeCode)
+
+**Testing:**
+```bash
+# Ver eventos de riego
+mosquitto_sub -h localhost -t "riego/+/evento" -v
+
+# Ver eventos de sistema
+mosquitto_sub -h localhost -t "riego/+/sistema/evento" -v
+
+# Buscar en logs del backend
+grep "\[Sistema\]" logs/app.log
+grep "Evento MQTT incompleto" logs/app.log
+```
+
+**Notas:**
+- Cambios retrocompatibles: no rompen flujos existentes
+- Nuevo subscriber se registra automáticamente al arrancar
+- Recomendado reiniciar backend después de actualizar
+
+---
+
+### Bugfix: Compilación ESP8266 - Include de MqttManager
+
+---
 
 ## 2026-01-23
 

@@ -33,35 +33,45 @@ public class RiegoEventoService {
     public void procesarEvento(UUID nodeId, String payload) {
         try {
             JsonNode json = objectMapper.readTree(payload);
-            
+            // Validar campos mínimos para evitar NPE
+            if (!json.hasNonNull("zona") || !json.hasNonNull("evento") || !json.hasNonNull("timestamp") || !json.has("origen")) {
+                log.warn("Evento MQTT incompleto, se descarta: {}", payload);
+                return;
+            }
+
             Short zona = (short) json.get("zona").asInt();
             String evento = json.get("evento").asText(); // "inicio" o "fin"
             long timestamp = json.get("timestamp").asLong();
             String origen = json.get("origen").asText(); // "agenda" o "manual"
-            
+
             // Solo guardamos eventos de "fin" con la duración real
             if ("fin".equals(evento)) {
+                if (!json.hasNonNull("duracionReal")) {
+                    log.warn("Evento 'fin' sin duracionReal, se descarta: {}", payload);
+                    return;
+                }
+
                 RiegoEvento riegoEvento = new RiegoEvento();
                 riegoEvento.setNodeId(nodeId);
                 riegoEvento.setZona(zona);
                 riegoEvento.setTimestamp(Instant.ofEpochSecond(timestamp));
                 riegoEvento.setDuracionSeg(json.get("duracionReal").asInt());
                 riegoEvento.setOrigen(origen);
-                
-                if (json.has("versionAgenda") && !json.get("versionAgenda").isNull()) {
+
+                if (json.hasNonNull("versionAgenda")) {
                     riegoEvento.setVersionAgenda(json.get("versionAgenda").asInt());
                 }
-                
+
                 riegoEvento.setRaw(payload);
-                
+
                 repository.save(riegoEvento);
-                log.info("Evento de riego guardado: nodeId={}, zona={}, duracion={}s, origen={}", 
+                log.info("Evento de riego guardado: nodeId={}, zona={}, duracion={}s, origen={}",
                          nodeId, zona, riegoEvento.getDuracionSeg(), origen);
             } else {
-                log.debug("Evento de inicio recibido: nodeId={}, zona={}, origen={}", 
+                log.debug("Evento de inicio recibido: nodeId={}, zona={}, origen={}",
                          nodeId, zona, origen);
             }
-            
+
         } catch (Exception e) {
             log.error("Error procesando evento de riego: {}", e.getMessage(), e);
         }

@@ -1,6 +1,7 @@
 #include "AgendaManager.h"
 #include "../storage/SPIFFSManager.h"
 #include "../network/TimeSync.h"
+#include "../network/MqttManager.h"
 #include "../hardware/RelayController.h"
 #include "../utils/Logger.h"
 #include <time.h>

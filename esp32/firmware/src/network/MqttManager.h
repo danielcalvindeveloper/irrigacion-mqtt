@@ -33,6 +33,8 @@ private:
     // Control de reconexión
     static const int MAX_RECONNECT_ATTEMPTS = 5;
     static const unsigned long RECONNECT_DELAY = 15000; // 15 segundos
+    static const int MAX_TOTAL_ATTEMPTS = 20;  // 20 intentos antes de reinicio (100 segundos aprox)
+    static const unsigned long RECONNECT_TIMEOUT = 300000; // 5 minutos sin conectar = reinicio forzado
     
     // Topics suscritos
     String cmdTopicPattern;

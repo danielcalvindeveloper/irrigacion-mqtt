@@ -79,6 +79,7 @@ bool MqttManager::connect() {
     
     if (result) {
         onConnected();
+        lastSuccessfulConnection = millis();
         reconnectAttempts = 0;
         
         // Suscribirse a topics
@@ -113,22 +114,39 @@ void MqttManager::loop() {
     if (mqttClient->connected()) {
         mqttClient->loop();
         connected = true;
+        lastSuccessfulConnection = millis();
+        reconnectAttempts = 0;
     } else {
         connected = false;
         
         // Intentar reconectar
         unsigned long now = millis();
+        
+        // Verificar timeout total (sin conexión por >5 min = reinicio forzado)
+        if (lastSuccessfulConnection > 0) {
+            unsigned long timeSinceLastConnection = now - lastSuccessfulConnection;
+            if (timeSinceLastConnection >= RECONNECT_TIMEOUT) {
+                Logger::logf(LOG_LEVEL_WARN, 
+                           "MQTT desconectado por %lu ms (>%lu ms), forzando reinicio", 
+                           timeSinceLastConnection, RECONNECT_TIMEOUT);
+                delay(1000);
+                ESP.restart();
+            }
+        }
+        
         if (now - lastConnectionAttempt >= RECONNECT_DELAY) {
-            if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-                Logger::logf(LOG_LEVEL_INFO, "Reintentando conexión MQTT (intento %d/%d)...", 
-                           reconnectAttempts + 1, MAX_RECONNECT_ATTEMPTS);
+            if (reconnectAttempts < MAX_TOTAL_ATTEMPTS) {
+                Logger::logf(LOG_LEVEL_INFO, 
+                           "Reintentando conexión MQTT (intento %d/%d)...", 
+                           reconnectAttempts + 1, MAX_TOTAL_ATTEMPTS);
                 connect();
             } else {
-                // Demasiados intentos fallidos, esperar más tiempo
-                if (now - lastConnectionAttempt >= RECONNECT_DELAY * 4) { // 60 segundos
-                    Logger::warn("Reiniciando contador de intentos MQTT");
-                    reconnectAttempts = 0;
-                }
+                // Demasiados intentos fallidos, forzar reinicio del ESP
+                Logger::logf(LOG_LEVEL_ERROR, 
+                           "MQTT: %d intentos fallidos, reiniciando ESP en 3 segundos...", 
+                           reconnectAttempts);
+                delay(3000);
+                ESP.restart();
             }
         }
     }
