@@ -9,10 +9,12 @@
 // ============= Hardware Config para NodeMCU ESP8266 =============
 #define MAX_ZONES 8
 #define MAX_SENSORS 1  // Solo 1 pin ADC disponible (A0)
-#define LED_PIN 2      // LED integrado en NodeMCU (GPIO2)
+// LED deshabilitado - no hay pines disponibles sin conflictos
+// #define LED_PIN 2   // Comentado: pin usado para I2C_SDA
 
 // Pines de relés (OUTPUT - Lógica invertida: LOW=ON, HIGH=OFF)
-// D1=GPIO5, D2=GPIO4, D5=GPIO14, D6=GPIO12, D7=GPIO13, D8=GPIO15, SD3=GPIO10, RX=GPIO3
+// Asignación: D1=GPIO5, D2=GPIO4, D5=GPIO14, D6=GPIO12, D7=GPIO13, D8=GPIO15, SD3=GPIO10
+// ⚠️  NOTA: TX/RX (GPIO1/3) reservados para programación. Zona 8 usa GPIO16
 static const int RELAY_PINS[MAX_ZONES] = {
     5,   // D1 - Zona 1
     4,   // D2 - Zona 2
@@ -21,7 +23,7 @@ static const int RELAY_PINS[MAX_ZONES] = {
     13,  // D7 - Zona 5
     15,  // D8 - Zona 6
     10,  // SD3 - Zona 7
-    3    // RX - Zona 8 (⚠️ deshabilita Serial)
+    16   // D0 - Zona 8 (⚠️ libera RX para programación)
 };
 
 // Pines de sensores de humedad (INPUT - ADC 10-bit)
@@ -32,8 +34,9 @@ static const int SENSOR_PINS[MAX_SENSORS] = {
 };
 
 // Pines I2C para pantalla OLED
-#define I2C_SDA 13  // D7 (GPIO13)
-#define I2C_SCL 0   // D3 (GPIO0)
+// ⚠️ I2C_SDA en GPIO2 para evitar conflicto con relé zona 5 (GPIO13)
+#define I2C_SDA 2   // D4 (GPIO2) - Compatible con programación, sin conflictos
+#define I2C_SCL 0   // D3 (GPIO0) - Pin estándar I2C
 #define OLED_ADDRESS 0x3C  // Dirección 7-bit (0x78 >> 1)
 #define OLED_WIDTH 128
 #define OLED_HEIGHT 64

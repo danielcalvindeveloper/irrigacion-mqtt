@@ -185,9 +185,9 @@ void initSerial() {
 void initHardware() {
     Serial.println("[INFO] Inicializando hardware...");
     
-    // LED integrado
-    pinMode(LED_PIN, OUTPUT);
-    digitalWrite(LED_PIN, LOW);
+    // LED integrado - Deshabilitado: pin GPIO2 usado para I2C_SDA
+    // pinMode(LED_PIN, OUTPUT);
+    // digitalWrite(LED_PIN, LOW);
     
     // Pines de relés (todos OFF al inicio)
     for (int i = 0; i < MAX_ZONES; i++) {
@@ -202,13 +202,13 @@ void initHardware() {
     }
     Serial.printf("[INFO] %d sensores ADC configurados\n", MAX_SENSORS);
     
-    // Parpadear LED para indicar que hardware está listo
-    for (int i = 0; i < 3; i++) {
-        digitalWrite(LED_PIN, HIGH);
-        delay(200);
-        digitalWrite(LED_PIN, LOW);
-        delay(200);
-    }
+    // Parpadeo de LED deshabilitado - LED_PIN no disponible
+    // for (int i = 0; i < 3; i++) {
+    //     digitalWrite(LED_PIN, HIGH);
+    //     delay(200);
+    //     digitalWrite(LED_PIN, LOW);
+    //     delay(200);
+    // }
 }
 
 void printBanner() {
@@ -427,12 +427,12 @@ void mainLoop() {
     // - Verificar agendas programadas
     // - Leer sensores periódicamente
     
-    // Indicador visual de vida
-    static unsigned long lastBlink = 0;
-    if (millis() - lastBlink > 1000) {
-        digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-        lastBlink = millis();
-    }
+    // Indicador visual de vida - Deshabilitado: LED_PIN no disponible
+    // static unsigned long lastBlink = 0;
+    // if (millis() - lastBlink > 1000) {
+    //     digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+    //     lastBlink = millis();
+    // }
     
     // Debug: Mostrar tiempo cada 30 segundos si está sincronizado
     static unsigned long lastTimeDebug = 0;
