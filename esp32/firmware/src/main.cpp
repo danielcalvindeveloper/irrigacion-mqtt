@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <ArduinoOTA.h>
 #include "config/Config.h"
 #include "config/Secrets.h"
 #include "network/WiFiManager.h"
@@ -26,12 +27,14 @@ void onZoneStateChanged(int zona, bool estado);
 void onRiegoEvent(int zona, String evento, String origen, int duracion, int versionAgenda);
 void showStoredAgenda();
 void fetchAndStoreAgendas();
+void initOTA();
 
 // Estado global del sistema
 SystemState currentState = INIT;
 unsigned long lastStatusPublish = 0;
 unsigned long lastHumidityRead = 0;
 unsigned long lastDisplayUpdate = 0;
+bool otaInitialized = false;
 
 // Módulos del sistema
 WiFiManager wifiManager;
@@ -117,9 +120,16 @@ void setup() {
 // LOOP - Loop principal
 // ============================================================================
 void loop() {
+    if (OTA_ENABLED && wifiManager.isConnected() && !otaInitialized) {
+        initOTA();
+    }
+
     // Actualizar módulos
     wifiManager.loop();
     mqttManager.loop();
+    if (OTA_ENABLED && otaInitialized) {
+        ArduinoOTA.handle();
+    }
     relayController.loop();  // CRITICO: actualizar timers de zonas
     
     // TimeSync solo actualiza si WiFi está conectado
@@ -221,8 +231,49 @@ void printBanner() {
     Serial.printf(" Node ID: %s\n", NODE_ID);
     Serial.printf(" Max Zonas: %d\n", MAX_ZONES);
     Serial.printf(" Sensores: %d\n", MAX_SENSORS);
+    Serial.printf(" OTA: %s (puerto %d)\n", OTA_ENABLED ? "habilitado" : "deshabilitado", OTA_PORT);
     Serial.println("====================================");
     Serial.println();
+}
+
+void initOTA() {
+    String otaHost = String("riego-") + String(NODE_ID);
+    otaHost.replace(" ", "-");
+
+    ArduinoOTA.setPort(OTA_PORT);
+    ArduinoOTA.setHostname(otaHost.c_str());
+
+    ArduinoOTA.onStart([]() {
+        Logger::info("OTA iniciado");
+        displayManager.showStatusLine("OTA: iniciando...");
+        displayManager.display();
+    });
+
+    ArduinoOTA.onEnd([]() {
+        Logger::info("OTA completado");
+        displayManager.showStatusLine("OTA: completo");
+        displayManager.display();
+    });
+
+    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+        const unsigned int percentage = (total > 0) ? ((progress * 100U) / total) : 0;
+        static unsigned int lastPercentage = 0;
+        if (percentage >= lastPercentage + 10 || percentage == 100) {
+            lastPercentage = percentage;
+            Logger::info("OTA progreso: " + String(percentage) + "%");
+        }
+    });
+
+    ArduinoOTA.onError([](ota_error_t error) {
+        Logger::error("OTA error: " + String((int)error));
+        displayManager.showStatusLine("OTA: error");
+        displayManager.display();
+    });
+
+    ArduinoOTA.begin();
+    otaInitialized = true;
+
+    Logger::info("OTA listo. Host: " + otaHost + " Puerto: " + String(OTA_PORT));
 }
 
 // ============================================================================

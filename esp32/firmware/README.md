@@ -1,6 +1,6 @@
 # Firmware ESP8266 - Sistema de Riego MQTT
 
-Firmware para ESP8266 NodeMCU que controla 4 zonas de riego mediante MQTT, con display OLED para monitoreo visual en tiempo real.
+Firmware para ESP8266 NodeMCU que controla hasta 8 zonas de riego mediante MQTT, con display OLED para monitoreo visual en tiempo real.
 
 ## 🚀 Quick Start
 
@@ -21,20 +21,50 @@ Editar `src/config/Secrets.h` con tus credenciales:
 
 ### 2. Compilar y Subir
 
-Con PlatformIO:
+Con PlatformIO (cuatro perfiles):
 ```bash
-# Compilar
-pio run
+# PERFIL RELES (activo en bajo) - USB
+pio run -e nodemcuv2
+pio run -e nodemcuv2 -t upload --upload-port COM3
+pio device monitor -p COM3 -b 115200
 
-# Subir a ESP32
-pio run --target upload
+# PERFIL RELES (activo en bajo) - OTA
+pio run -e nodemcuv2_ota -t upload --upload-port 192.168.10.140
 
-# Monitor serial
-pio device monitor
+# PERFIL MOSFET (activo en alto) - USB
+pio run -e nodemcuv2_mosfet
+pio run -e nodemcuv2_mosfet -t upload --upload-port COM3
+pio device monitor -p COM3 -b 115200
 
-# Todo en uno
-pio run --target upload && pio device monitor
+# PERFIL MOSFET (activo en alto) - OTA
+pio run -e nodemcuv2_mosfet_ota -t upload --upload-port 192.168.10.140
 ```
+
+### 3. Actualizar Firmware por WiFi (OTA)
+
+Una vez que el firmware con OTA fue cargado por USB al menos una vez, puedes actualizar por IP sin cable USB:
+
+```bash
+# PERFIL RELES
+pio run -e nodemcuv2_ota -t upload --upload-port 192.168.10.140
+
+# PERFIL MOSFET
+pio run -e nodemcuv2_mosfet_ota -t upload --upload-port 192.168.10.140
+```
+
+Notas OTA:
+- Puerto OTA por defecto: `8266`.
+- El hostname OTA se publica como `riego-{NODE_ID}`.
+- La IP por defecto configurada hoy es `192.168.10.140`.
+- Si cambia la IP del ESP, vuelve a ejecutar el comando con la nueva IP.
+- Si falla OTA, hacer una carga USB y reintentar.
+
+Notas:
+- `nodemcuv2` usa salida activa en bajo (placa de relés tradicional).
+- `nodemcuv2_ota` usa el mismo firmware de relés, pero sube por WiFi.
+- `nodemcuv2_mosfet` usa salida activa en alto (`-DOUTPUT_ACTIVE_HIGH`).
+- `nodemcuv2_mosfet_ota` usa el mismo firmware MOSFET, pero sube por WiFi.
+- Si cambia el puerto USB, actualizar `COM3` por el puerto detectado.
 
 Con Arduino IDE:
 1. Abrir `src/main.cpp`
@@ -195,7 +225,7 @@ Ver `Secrets.h.example` para configuración de credenciales HTTP.
 3. ✅ Verificar conexión WiFi/MQTT en serial
 4. ⏳ Implementar módulos faltantes
 5. ⏳ Probar con electroválvulas reales
-6. ⏳ Implementar OTA para actualizaciones remotas
+6. ✅ OTA por WiFi habilitado (ArduinoOTA)
 
 ## 📝 Estado de Implementación
 
@@ -210,7 +240,7 @@ Ver `Secrets.h.example` para configuración de credenciales HTTP.
 - [x] DisplayManager ✅ Completado (OLED SSD1306) ⭐ NUEVO
 - [ ] HumiditySensor ⏳ Bloqueado (hardware no disponible)
 - [ ] Tests unitarios (pendiente)
-- [ ] OTA updates (pendiente)
+- [x] OTA updates ✅ habilitado
 
 **Recursos actuales:**
 - Flash: 36.1% usado (376911/1044464 bytes)
