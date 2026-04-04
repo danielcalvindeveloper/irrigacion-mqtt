@@ -18,6 +18,11 @@ private:
     WiFiClient wifiClient;
     String baseUrl;
     String basicAuthHeader;
+    String backendHost;
+    uint16_t backendPort;
+    String backendUser;
+    String backendPassword;
+    String nodeId;
     
     // Construir header de autenticación Basic
     String buildBasicAuth(const char* user, const char* password);
@@ -28,6 +33,11 @@ public:
     
     // Inicializar cliente HTTP
     void init();
+
+    // Configuración dinámica del backend y nodo
+    void setRuntimeConfig(const String& backendHost, uint16_t backendPort,
+                          const String& backendUser, const String& backendPassword,
+                          const String& nodeId);
     
     // Obtener agendas desde backend
     // Retorna JSON string o string vacío si falla

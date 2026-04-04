@@ -24,6 +24,8 @@ private:
     String localIP;
     String macAddress;
     int rssi;
+    String configuredSSID;
+    String configuredPassword;
     
     // Control de reconexión
     static const int MAX_RECONNECT_ATTEMPTS = 5;
@@ -39,6 +41,9 @@ public:
     
     // Inicializar WiFi
     void init();
+
+    // Configurar credenciales WiFi en runtime
+    void setCredentials(const String& ssid, const String& password);
     
     // Conectar a WiFi (bloqueante con timeout)
     bool connect();
@@ -63,6 +68,9 @@ public:
     
     // Obtener nombre de red (SSID)
     String getSSID();
+
+    // Obtener SSID configurado (aunque no esté conectado)
+    String getConfiguredSSID();
     
     // Forzar reconexión
     void forceReconnect();

@@ -59,6 +59,25 @@ Notas OTA:
 - Si cambia la IP del ESP, vuelve a ejecutar el comando con la nueva IP.
 - Si falla OTA, hacer una carga USB y reintentar.
 
+### 4. Reset y Reconfiguración WiFi por Botón Físico
+
+No existe fallback automático a AP por caída de router. El portal de configuración solo se abre por acción física.
+
+- Botón conectado a `GPIO2` (configurado con `INPUT_PULLUP`, activo en `LOW`).
+- Mantener presionado `>= 5s`: abre portal de configuración WiFi (sin borrar config existente).
+- Mantener presionado `>= 10s`: factory reset (borra `config.json`) y abre portal.
+
+Al abrir portal:
+- El ESP levanta AP: `RIEGO-CONFIG-{chipid}`
+- Password AP: `riego1234`
+- URL: `http://192.168.4.1`
+- Muestra lista de redes WiFi detectadas (escaneo local)
+- Verifica conexión real antes de guardar
+- Informa resultado (éxito/error) en la página y en OLED
+- Permite configurar también: MQTT (`host/puerto/user/pass`), Backend HTTP (`host/puerto/user/pass`) y `Node ID`
+
+Desde esa página se guarda toda la configuración runtime en LittleFS (`/config.json`) y el equipo se reinicia.
+
 Notas:
 - `nodemcuv2` usa salida activa en bajo (placa de relés tradicional).
 - `nodemcuv2_ota` usa el mismo firmware de relés, pero sube por WiFi.

@@ -8,6 +8,11 @@ MqttManager* MqttManager::instance = nullptr;
 // ============================================================================
 MqttManager::MqttManager() {
     mqttClient = nullptr;
+    brokerHost = MQTT_BROKER;
+    brokerPort = MQTT_PORT;
+    brokerUser = MQTT_USER;
+    brokerPassword = MQTT_PASSWORD;
+    nodeId = NODE_ID;
     connected = false;
     lastConnectionAttempt = 0;
     lastSuccessfulConnection = 0;
@@ -15,6 +20,29 @@ MqttManager::MqttManager() {
     commandCallback = nullptr;
     agendaSyncCallback = nullptr;
     instance = this;
+}
+
+void MqttManager::setRuntimeConfig(const String& newBrokerHost, uint16_t newBrokerPort,
+                                   const String& newBrokerUser, const String& newBrokerPassword,
+                                   const String& newNodeId) {
+    if (newBrokerHost.length() > 0) {
+        brokerHost = newBrokerHost;
+    }
+
+    if (newBrokerPort > 0) {
+        brokerPort = newBrokerPort;
+    }
+
+    brokerUser = newBrokerUser;
+    brokerPassword = newBrokerPassword;
+
+    if (newNodeId.length() > 0) {
+        nodeId = newNodeId;
+    }
+}
+
+String MqttManager::getNodeId() {
+    return nodeId;
 }
 
 // ============================================================================
@@ -34,7 +62,7 @@ void MqttManager::init() {
     
     // Crear cliente MQTT
     mqttClient = new PubSubClient(espClient);
-    mqttClient->setServer(MQTT_BROKER, MQTT_PORT);
+    mqttClient->setServer(brokerHost.c_str(), brokerPort);
     mqttClient->setCallback(messageCallback);
     mqttClient->setKeepAlive(MQTT_KEEP_ALIVE);
     
@@ -47,12 +75,12 @@ void MqttManager::init() {
     }
     
     // Construir patterns de topics
-    cmdTopicPattern = String("riego/") + NODE_ID + "/cmd/zona/+";
-    agendaSyncTopic = String("riego/") + NODE_ID + "/agenda/sync";
+    cmdTopicPattern = String("riego/") + nodeId + "/cmd/zona/+";
+    agendaSyncTopic = String("riego/") + nodeId + "/agenda/sync";
     
-    Logger::logf(LOG_LEVEL_INFO, "Broker: %s:%d", MQTT_BROKER, MQTT_PORT);
+    Logger::logf(LOG_LEVEL_INFO, "Broker: %s:%d", brokerHost.c_str(), brokerPort);
     Logger::logf(LOG_LEVEL_INFO, "Client ID: %s", getClientId().c_str());
-    Logger::logf(LOG_LEVEL_INFO, "Node ID: %s", NODE_ID);
+    Logger::logf(LOG_LEVEL_INFO, "Node ID: %s", nodeId.c_str());
 }
 
 // ============================================================================
@@ -64,15 +92,15 @@ bool MqttManager::connect() {
         return true;
     }
     
-    Logger::logf(LOG_LEVEL_INFO, "Conectando a broker MQTT: %s:%d", MQTT_BROKER, MQTT_PORT);
+    Logger::logf(LOG_LEVEL_INFO, "Conectando a broker MQTT: %s:%d", brokerHost.c_str(), brokerPort);
     lastConnectionAttempt = millis();
     
     String clientId = getClientId();
     
     // Intentar conexión (con o sin autenticación)
     bool result;
-    if (strlen(MQTT_USER) > 0) {
-        result = mqttClient->connect(clientId.c_str(), MQTT_USER, MQTT_PASSWORD);
+    if (brokerUser.length() > 0) {
+        result = mqttClient->connect(clientId.c_str(), brokerUser.c_str(), brokerPassword.c_str());
     } else {
         result = mqttClient->connect(clientId.c_str());
     }
@@ -175,7 +203,7 @@ bool MqttManager::publishZoneStatus(int zona, bool estado, int tiempoRestante) {
     
     // Construir topic: riego/{NODE_ID}/status/zona/{zona}
     char topic[128];
-    snprintf(topic, sizeof(topic), "riego/%s/status/zona/%d", NODE_ID, zona);
+    snprintf(topic, sizeof(topic), "riego/%s/status/zona/%d", nodeId.c_str(), zona);
     
     // Construir payload JSON con formato esperado por backend
     // Backend espera: {"activa": true/false, "tiempoRestante": seconds}
@@ -205,7 +233,7 @@ bool MqttManager::publishRiegoEvento(int zona, String evento, String origen, int
     
     // Construir topic: riego/{NODE_ID}/evento
     char topic[128];
-    snprintf(topic, sizeof(topic), "riego/%s/evento", NODE_ID);
+    snprintf(topic, sizeof(topic), "riego/%s/evento", nodeId.c_str());
     
     // Construir payload JSON
     StaticJsonDocument<JSON_BUFFER_SMALL> doc;
@@ -248,7 +276,7 @@ bool MqttManager::publishSystemEvent(String tipoEvento, String detalles, int age
     
     // Construir topic: riego/{NODE_ID}/sistema/evento
     char topic[128];
-    snprintf(topic, sizeof(topic), "riego/%s/sistema/evento", NODE_ID);
+    snprintf(topic, sizeof(topic), "riego/%s/sistema/evento", nodeId.c_str());
     
     // Construir payload JSON
     StaticJsonDocument<JSON_BUFFER_MEDIUM> doc;
@@ -285,7 +313,7 @@ bool MqttManager::publishTelemetry(int zona, int humedad) {
     
     // Construir topic: riego/{NODE_ID}/humedad/zona/{zona}
     char topic[128];
-    snprintf(topic, sizeof(topic), "riego/%s/humedad/zona/%d", NODE_ID, zona);
+    snprintf(topic, sizeof(topic), "riego/%s/humedad/zona/%d", nodeId.c_str(), zona);
     
     // Construir payload JSON
     StaticJsonDocument<JSON_BUFFER_SMALL> doc;
@@ -313,7 +341,7 @@ bool MqttManager::publishSystemStatus(String status) {
     if (!isConnected()) return false;
     
     char topic[128];
-    snprintf(topic, sizeof(topic), "riego/%s/status/system", NODE_ID);
+    snprintf(topic, sizeof(topic), "riego/%s/status/system", nodeId.c_str());
     
     StaticJsonDocument<JSON_BUFFER_MEDIUM> doc;
     doc["status"] = status;
@@ -473,7 +501,7 @@ String MqttManager::getClientId() {
         return String(MQTT_CLIENT_ID);
     }
     // Usar NODE_ID si no hay CLIENT_ID configurado
-    return String("ESP8266_") + String(NODE_ID).substring(0, 8);
+    return String("ESP8266_") + nodeId.substring(0, 8);
 }
 
 // ============================================================================
@@ -481,8 +509,9 @@ String MqttManager::getClientId() {
 // ============================================================================
 void MqttManager::printInfo() {
     Serial.println("\n=== Información MQTT ===");
-    Serial.printf("Broker: %s:%d\n", MQTT_BROKER, MQTT_PORT);
+    Serial.printf("Broker: %s:%d\n", brokerHost.c_str(), brokerPort);
     Serial.printf("Client ID: %s\n", getClientId().c_str());
+    Serial.printf("Node ID: %s\n", nodeId.c_str());
     Serial.printf("Conectado: %s\n", isConnected() ? "SI" : "NO");
     if (isConnected()) {
         Serial.printf("Tiempo conectado: %lu s\n", getTimeSinceLastConnection() / 1000);

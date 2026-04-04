@@ -23,6 +23,11 @@ class MqttManager {
 private:
     WiFiClient espClient;
     PubSubClient* mqttClient;
+    String brokerHost;
+    uint16_t brokerPort;
+    String brokerUser;
+    String brokerPassword;
+    String nodeId;
     
     // Estado de conexión
     bool connected;
@@ -69,6 +74,14 @@ public:
     
     // Inicializar cliente MQTT
     void init();
+
+    // Configuración dinámica de broker y nodo
+    void setRuntimeConfig(const String& brokerHost, uint16_t brokerPort,
+                          const String& brokerUser, const String& brokerPassword,
+                          const String& nodeId);
+
+    // Obtener Node ID activo
+    String getNodeId();
     
     // Conectar al broker MQTT (bloqueante con timeout)
     bool connect();

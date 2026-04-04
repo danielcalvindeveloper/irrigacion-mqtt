@@ -9,6 +9,8 @@ WiFiManager::WiFiManager() {
     connectionStartTime = 0;
     reconnectAttempts = 0;
     rssi = 0;
+    configuredSSID = WIFI_SSID;
+    configuredPassword = WIFI_PASSWORD;
 }
 
 // ============================================================================
@@ -34,6 +36,14 @@ void WiFiManager::init() {
 }
 
 // ============================================================================
+// Configurar credenciales WiFi en runtime
+// ============================================================================
+void WiFiManager::setCredentials(const String& ssid, const String& password) {
+    configuredSSID = ssid;
+    configuredPassword = password;
+}
+
+// ============================================================================
 // Conectar a WiFi (bloqueante con timeout)
 // ============================================================================
 bool WiFiManager::connect() {
@@ -42,10 +52,16 @@ bool WiFiManager::connect() {
         return true;
     }
     
-    Logger::logf(LOG_LEVEL_INFO, "Conectando a WiFi: %s", WIFI_SSID);
+    if (configuredSSID.length() == 0) {
+        Logger::error("SSID vacio - no se puede conectar a WiFi");
+        reconnectAttempts++;
+        return false;
+    }
+
+    Logger::logf(LOG_LEVEL_INFO, "Conectando a WiFi: %s", configuredSSID.c_str());
     
     // Iniciar conexión
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    WiFi.begin(configuredSSID.c_str(), configuredPassword.c_str());
     connectionStartTime = millis();
     
     // Esperar conexión con timeout
@@ -169,6 +185,13 @@ String WiFiManager::getSSID() {
 }
 
 // ============================================================================
+// Obtener SSID configurado
+// ============================================================================
+String WiFiManager::getConfiguredSSID() {
+    return configuredSSID;
+}
+
+// ============================================================================
 // Forzar reconexión
 // ============================================================================
 void WiFiManager::forceReconnect() {
@@ -218,7 +241,7 @@ void WiFiManager::onConnected() {
     rssi = WiFi.RSSI();
     connectionStartTime = millis();
     
-    Logger::logf(LOG_LEVEL_INFO, "WiFi conectado a: %s", WIFI_SSID);
+    Logger::logf(LOG_LEVEL_INFO, "WiFi conectado a: %s", configuredSSID.c_str());
     Logger::logf(LOG_LEVEL_INFO, "IP: %s", localIP.c_str());
     Logger::logf(LOG_LEVEL_INFO, "RSSI: %d dBm", rssi);
 }

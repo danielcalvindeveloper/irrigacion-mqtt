@@ -6,6 +6,30 @@
 // ============================================================================
 HttpClient::HttpClient() {
     baseUrl = "";
+    backendHost = BACKEND_HOST;
+    backendPort = BACKEND_PORT;
+    backendUser = BACKEND_USER;
+    backendPassword = BACKEND_PASSWORD;
+    nodeId = NODE_ID;
+}
+
+void HttpClient::setRuntimeConfig(const String& newBackendHost, uint16_t newBackendPort,
+                                  const String& newBackendUser, const String& newBackendPassword,
+                                  const String& newNodeId) {
+    if (newBackendHost.length() > 0) {
+        backendHost = newBackendHost;
+    }
+
+    if (newBackendPort > 0) {
+        backendPort = newBackendPort;
+    }
+
+    backendUser = newBackendUser;
+    backendPassword = newBackendPassword;
+
+    if (newNodeId.length() > 0) {
+        nodeId = newNodeId;
+    }
 }
 
 // ============================================================================
@@ -15,10 +39,10 @@ void HttpClient::init() {
     Logger::info("Inicializando HttpClient...");
     
     // Construir base URL
-    baseUrl = String("http://") + BACKEND_HOST + ":" + String(BACKEND_PORT) + "/api";
+    baseUrl = String("http://") + backendHost + ":" + String(backendPort) + "/api";
     
     // Construir header de autenticación
-    basicAuthHeader = buildBasicAuth(BACKEND_USER, BACKEND_PASSWORD);
+    basicAuthHeader = buildBasicAuth(backendUser.c_str(), backendPassword.c_str());
     
     Logger::logf(LOG_LEVEL_INFO, "Backend URL: %s", baseUrl.c_str());
 }
@@ -42,7 +66,7 @@ String HttpClient::fetchAgendas() {
     }
     
     HTTPClient http;
-    String url = baseUrl + "/nodos/" + String(NODE_ID) + "/agendas";
+    String url = baseUrl + "/nodos/" + nodeId + "/agendas";
     
     Logger::logf(LOG_LEVEL_INFO, "Solicitando agendas desde: %s", url.c_str());
     
@@ -82,7 +106,7 @@ bool HttpClient::isBackendAvailable() {
     }
     
     HTTPClient http;
-    String url = baseUrl + "/nodos/" + String(NODE_ID) + "/status";
+    String url = baseUrl + "/nodos/" + nodeId + "/status";
     
     http.begin(wifiClient, url);
     http.addHeader("Authorization", basicAuthHeader);

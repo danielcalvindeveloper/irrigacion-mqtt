@@ -56,6 +56,13 @@ static const int SENSOR_PINS[MAX_SENSORS] = {
 #define OTA_ENABLED true
 #define OTA_PORT 8266
 
+// Configuración local por botón físico
+// Solo se abre portal web por acción física explícita (sin fallback automático por caída de WiFi)
+#define FACTORY_RESET_BUTTON_PIN 2
+#define CONFIG_PORTAL_HOLD_MS 5000
+#define FACTORY_RESET_HOLD_MS 10000
+#define CONFIG_PORTAL_AP_PASSWORD "riego1234"
+
 // NTP - Sincronización de tiempo
 #define NTP_SERVER "pool.ntp.org"
 #define GMT_OFFSET_SEC -10800        // GMT-3 (Argentina) = -3 * 3600
